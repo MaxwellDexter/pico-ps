@@ -185,9 +185,8 @@ function _draw()
 end
 
 function _update60()
- delta_time = time()-prev_time
+ update_time()
  update_demo()
- prev_time = time()
 end
 __gfx__
 0000000000a99a0000022000000bb000000aa0000009900000088000000ee0000001100009898980006060000060600000600000080000000880000000000000

@@ -39,6 +39,11 @@ twitter: @KearneyMax
 prev_time = nil -- for calculating dt
 delta_time = nil -- the change in time
 
+function update_time()
+ delta_time = time()-prev_time
+ prev_time = time()
+end
+
 gravity = 50
 
 function calc_gravity(a)
