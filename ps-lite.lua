@@ -1,4 +1,5 @@
 ---------------------------
+--        pico-ps        --
 --    particle system    --
 --  author: max kearney  --
 --  created: april 2019  --

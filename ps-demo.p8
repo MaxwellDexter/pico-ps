@@ -1,12 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
-----------------------------
---  particle system demo  --
---  author: max kearney   --
---  created: april 2019   --
---  updated: july 2020    --
-----------------------------
+--pico-ps particle system
+--max kearney
+--created: april 2019
+--updated: july 2020
+---------------------
 
 -------------------------------------------------- globals
 show_demo_info = true
