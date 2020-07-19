@@ -1,353 +1,22 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
-------------------------------
---      particle system     --
---  max kearney april 2019  --
-------------------------------
-
---[[
-documentation (tutorial)
-hello, welcome to the particle system.
-what do you need to know before using this code in your game?
-first run the demo to get a feel for what's going on.
-then look through the code to actually see what's going on.
-
-start with the particle object, then the emitter object and then the demo code.
-the particle is fairly straightforward, it is an object that displays itself and moves itself.
-the emitter is the source of all particles, only use this to create particles. it has a huge constructor.
-the demo code will be helpful for setting up the emitters and some upkeep of them.
-
-you can delete all the stuff in the 'demo code' section, but please read it to know how it works.
-do not delete: the globals stuff marked as don't delete! these are used for time calculations and will break most of the features if deleted.
-can replace with your own: gravity calculations or point2d containers
-
-how the time calculations work:
-1. the time in the previous update is stored in prev_time.
-2. in the next update call, prev_time is taken (minus) from the current time to get the change in time.
-3. the change in time (delta_time) is sent to the emitters so that they can update their particle's fields with it.
-4. using delta_time means that particles can perform their calculations as they were intended to, regardless of frame rate.
-   even if the frame rate was 1 frame per second, particles with a 3 second lifetime will only exist for 3 seconds, even if that is 3 frames.
-
-good luck and happy coding!
-contact me on my itch.io page, or find maxwell dexter and contact me through there if you have any questions.
-
-]]
+----------------------------
+--  particle system demo  --
+--  author: max kearney   --
+--  created: april 2019   --
+--  updated: july 2020    --
+----------------------------
 
 -------------------------------------------------- globals
--- example emitter and demo code (you can delete these)
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"basic", "angle spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire"}
+emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire"}
 
--- don't delete globals from here down
-prev_time = nil -- for calculating dt
-delta_time = nil -- the change in time
+#include ps.lua
 
--- gravity calculations
-jump_height = 30
-apex_time = 12
-gravity = (2 * jump_height) / (apex_time * apex_time)
-jump_vel = sqrt(2 * gravity * jump_height)
-
-function calc_gravity(a)
- a.velocity.y = a.velocity.y + gravity
-end
-
--------------------------------------------------- point2d
---[[
- this is a container class for two points. 
- can be used for coordinates, velocity or anything else that requires 2 parts of data.
-]]
-point2d = {}
-point2d.__index = point2d
-function point2d.create(x,y)
- local p = {}
- setmetatable (p, point2d)
- p.x = x
- p.y = y
- return p
-end
-
--------------------------------------------------- particle
---[[
-
-particle tutorial: 
-you likely will never come into contact with the particle object in code, all interfacing should be done through the emitter
- unless you are modifying how the particles work.
-still have a look at how this works though.
-
-constructor parameters:
-(values are numbers unless specified)
-x,y:            the coordinates the particle spawns at
-colour:         the colour it is. uses pico 8's colour system.
-size:           the particle's original size
-size_over_life: the size you want the particle to grow/shrink to
-speed:          the speed you want the particle to start moving at (try 10)
-vel_over_life:  the velocity you want the particle to finish at when it dies
-angle:          the angle you want the particle to come flying out at in radians. range is 0-360. 
-                 however, 0 angle is coming out at an eastward direction and it travels anticlockwise
-gravity:        is this particle affected by gravity? true or false
-sprite:         the sprite it displays. will overwrite the colour. nil or sprite number.
-
-]]
-particle = {}
-particle.__index = particle
-function particle.create(x,y, colour, life, size, size_over_life, speed, vel_over_life, angle, gravity, sprite)
- local p = {}
- setmetatable (p, particle)
- p.pos = point2d.create(x,y)
- p.colour = colour
- p.orig_life = life
- p.life = life
-
- -- the 1125 number was 180 in the original calculation, 
- -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
- -- don't ask me why it's 1131, i don't know. maybe it's odd because i rounded pi?
- local angle_radians = angle * 3.14159 / 1131
- p.velocity = point2d.create(speed*cos(angle_radians), speed*sin(angle_radians))
- p.orig_vel = point2d.create(p.velocity.x, p.velocity.y)
- p.vel_over_life = point2d.create(vel_over_life*cos(angle_radians), vel_over_life*sin(angle_radians))
-
- p.dead = false
- p.gravity = gravity
-
- p.size = size
- p.orig_size = size
- p.size_over_life = size_over_life
-
- p.sprite = sprite
-
- return p
-end
-
--- upodate: handles all of the values changing like life, gravity, size/life, vel/life, movement and dying
-function particle:update(dt)
- self.life = self.life - dt
-
- if (self.gravity) then
-  calc_gravity(self)
- end
-
- -- size over lifetime
- if (self.orig_size ~= self.size_over_life) then
-  -- take the difference of original and future, divided by time, multiplied by delta time
-  self.size = self.size - ((self.orig_size-self.size_over_life)/self.orig_life)*dt
- end
-
- -- velocity over lifetime
- if (self.orig_vel.x ~= self.vel_over_life.x) then
-  -- take the difference of original and future, divided by time, multiplied by delta time
-  self.velocity.x = self.velocity.x - ((self.orig_vel.x-self.vel_over_life.x)/self.orig_life)*dt
-  self.velocity.y = self.velocity.y - ((self.orig_vel.y-self.vel_over_life.y)/self.orig_life)*dt
- end
-
- -- moving the particle
- if (self.life > 0) then
-  self.pos.x = self.pos.x + self.velocity.x * dt
-  self.pos.y = self.pos.y + self.velocity.y * dt
- else
-  self.die(self)
- end
-end
-
--- draws a circle with it's values
-function particle:draw()
- if (self.sprite ~= nil) then
-  spr(self.sprite, self.pos.x, self.pos.y)
- else
-  circfill(self.pos.x, self.pos.y, self.size, self.colour)
- end
-end
-
--- sets flag so that the emitter knows to kill it
-function particle:die()
- self.dead = true
-end
-
--------------------------------------------------- particle emitter
-
---[[
-emitter tutorial:
-the emitter is basically the 'spawner' of the particles. the particle is the thing you see, and the emitter is what makes it appear.
-this is why you have to pass in a lot more details to the emitter than you do the particle.
-the emitter is set up so you can have multiple running in the same game, either added to your world's entities collection or your game object.
-steps for a successful emission
-1. construct the emitter with all of the arguments passed in
-   yes, it's huge but if you use the guiding line it will greatly help you to construct your emitters.
-   check the 'spawn_emitter(emitter_string)' function to see the constructors with the commented line on top
-2. add the emitter to either your global collection of entities, or your game object
-3. call update() and draw() on the emitter each frame (using the game loop preferably)
-4. voila you have an emitter
-
-constructor parameters:
-the names have been shortened for readability
-x:        the x coordinate the particles will spawn from
-y:        the y coordinate the particles will spawn from
-freq:     the frequency between emissions in seconds. 0 will spawn every frame, 1 will spawn one particle every frame
-max:      the maximum number of particles the emitter is allowed to spawn. 0 = unlimited.
-size:     the initial spawn size of the particle. 
-s/l:      size over lifetime; the size the particle will be when it dies.
-col:      the colour of the sprite. uses pico 8's colour system
-ang:      the angle at which the particles will be emitted in degrees. 0 comes out east (right), and it goes anti-clockwise. 
-           90 degrees will be north (up), 180 degrees comes out west (left) etc.
-a_sp:     angle spread. choosing to spawn your particles in a random area of angle. e.g. an angle value of 180 and 
-           a spread value of 30 will spawn your particles with an angle anywhere between 180-210. see the angle demo (red colour)
-speed:    the initial velocity of the particle. 0 won't go anywhere, 1 will be really slow. try 10 and adjust from there
-speed_sp: speed spread. random speed between speed and speed + speed_spread. e.g. speed of 10 + speed_spread of 10 will produce
-           a speed anywhere between 10 and 20.
-v/l:      velocity over lifetime. the velocity (speed) your particle will be traveling at when it dies. a value of 0 will make it
-           slow down, a value higher than the given speed value will make it speed up.
-life:     the time (in seconds) it takes for the particle to die. i.e. the time it will stay on screen. needs a value greater than 0
-life_sp:  life spread. randomness of life length. value of 0 = same lifetime for every particle, value > 0 = varying lifetimes
-grav:     are the particles affected by gravity? pass in 'true' for yes or 'false' for no. will be affected by whatever is in the calc_gravity(a) function
-burst:    is this a burst emitter? pass in 'true' for yes or 'false' for no. will shoot out particles and then immediately stop emitting.
-           if you're hooking this up to an object that bursts whenever it does something, just call 'start_emit()' and it will be ready for the next burst
-rnd-col:  do you want every particle to be a random colour? pass in 'true' for yes or 'false' for no. 
-sprites:  the sprites you want to display. if you don't want sprites, pass in 'nil'. sprites are passed in as a list table and you can 
-           have any number of sprites greater than 0. i.e. pass in '{1}' or '{4, 56, 8, 17}' and the emitter will randomly 
-           choose one to pass to each new particle it creates.
-
-]]
-
--- the constructor has to have a lot of stuff passed in so that it can create it's particles correctly
-emitter = {}
-emitter.__index = emitter
-function emitter.create(x,y, frequency, max_p, 
-     p_size, p_size_over_life, p_colour,
-     p_angle, p_angle_spread, p_speed, p_speed_spread, p_vel_over_life,
-     p_life, p_life_spread, p_gravity, p_burst,
-     p_rnd_colour, p_sprites)
- local p = {}
- setmetatable (p, emitter)
- p.particles = {}
- p.to_remove = {}
-
- p.emitting = true
- p.frequency = frequency
- p.emit_time = frequency
- p.max_p = max_p
-
- p.pos = point2d.create(x,y)
-
- -- particle factory stuff
- p.p_size = p_size
- p.p_size_over_life = p_size_over_life
- p.p_colour = p_colour
- p.p_angle = p_angle
- p.p_angle_spread = p_angle_spread
- p.p_speed = p_speed
- p.p_speed_spread = p_speed_spread
- p.p_vel_over_life = p_vel_over_life
- p.p_life = p_life
- p.p_life_spread = p_life_spread
- p.p_gravity = p_gravity
- p.p_burst = p_burst
- p.rnd_colour = p_rnd_colour
- p.p_sprites = p_sprites
-
- return p
-end
-
--- tells all of the particles to update and removes any that are dead
-function emitter:update(dt)
- self.emit(self, dt)
- for p in all(self.particles) do
-  p.update(p, dt)
-  if (p.dead) then
-   self.remove(self, p)
-  end
- end
- self.remove_dead(self)
-end
-
--- tells of the particles to draw themselves
-function emitter:draw()
- for p in all(self.particles) do
-  p.draw(p)
- end
-end
-
-function emitter:get_colour()
- if (self.rnd_colour) then
-  return flr(rnd(16))
- else
-  return self.p_colour
- end
-end
-
--- factory method, creates a new particle based on the values set + random
--- this is why the emitter has to know about the properties of the particle it's emmitting
-function emitter:get_new_particle()
- local colour = nil
- if (self.p_sprites ~= nil) then colour = self.p_sprites[flr(rnd(#self.p_sprites))+1] end
- --(x,y, colour, life, size, size_over_life, speed, vel_over_life, angle, gravity, sprites)
- local p = particle.create(self.pos.x, self.pos.y, self.get_colour(self),
-     rnd(self.p_life_spread) + self.p_life,
-     self.p_size, self.p_size_over_life,
-     rnd(self.p_speed_spread) + self.p_speed,
-     self.p_vel_over_life,
-     rnd(self.p_angle_spread) + self.p_angle,
-     self.p_gravity,
-     colour
-     )
- return p
-end
-
-function emitter:emit(dt)
- if (self.emitting) then
-  if (self.p_burst) then
-   if (self.max_p <= 0) then
-    self.max_p = 50 end
-   for i=1,self.max_p do
-    self.add_particle(self, self.get_new_particle(self))
-   end
-   self.emitting = false
-  else
-   self.emit_time = self.emit_time - dt
-   if (self.emit_time <= 0 and (self.max_p == 0 or #self.particles < self.max_p)) then
-    self.add_particle(self, self.get_new_particle(self))
-    self.emit_time = self.frequency
-   end
-  end
- end
-end
-
-function emitter:add_particle(p)
- add(self.particles, p)
-end
-
-function emitter:add_multiple(ps)
- for p in all(ps) do
-  add(self.particles, p)
- end
-end
-
-function emitter:remove(p)
- add(self.to_remove, p)
-end
-
-function emitter:remove_dead()
- for p in all(self.to_remove) do
-  del(self.particles, p)
- end
- self.to_remove = {}
-end
-
-function emitter:start_emit()
- self.emitting = true
-end
-
-function emitter:stop_emit()
- self.emitting = false
-end
-
-function emitter:is_emitting()
- return self.emitting
-end
-
--------------------------------------------------- demo code (you can delete)
+-------------------------------------------------- demo code
 -- these are functions to help the demo run. you can copy/model from here,
 -- but most of this stuff isn't strictly necessary for an emitter to run
 function draw_demo()
@@ -448,53 +117,56 @@ end
 
 function spawn_emitter(emitter_string)
  if (emitter_string == "basic") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,  50,  1,    1,   7,  0,   360,  10,    10,       10,   1,    2,       false, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    50,  false, false, false,   7,   nil,     1,    2,      0,     360,      10,      10,      10,       1,      1,      0))
  elseif (emitter_string == "angle spread") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    0,   2,    1,   8,  90,  10,   10,    10,       10,  2,    2,       false, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   8,   nil,     2,    2,      90,    10,       10,      10,      10,       2,      1,      0))
+ elseif (emitter_string == "life/speed/size spread") then
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   3,   nil,     0,    5,      0,     360,      1,       1,       40,       1,      1,      4))
  elseif (emitter_string == "size over life") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0.5,  0,   0,    5,   10,  0,   360,  20,    0,       20,   1,    1,       false, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0.5,  0,   false, false, false,   10,  nil,     1,    1,      0,     360,      20,      20,      0,        0,      5,      0))
  elseif (emitter_string == "velocity over life") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    0,   1,    1,   11,  0,   360,  0,     0,        50,  2,    0,       false, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   11,  nil,     2,    0,      0,     360,      0,       50,      0,        1,      1,      0))
  elseif (emitter_string == "gravity") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    0,   2,    2,   9,   0,   180,  20,    10,       20,   2,    3,       true, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    0,   false, true,  false,   9,   nil,     2,    3,      0,     180,      20,      20,      10,       2,      2,      0))
  elseif (emitter_string == "everything") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    0,   4,    0,   12,  0,   360,  20,    20,        0,   1,    4,       false, false,  true, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, true,    12,  nil,     1,    4,      0,     360,      20,      0,       20,       3,      0,      3))
  elseif (emitter_string == "water spout") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    50,   4,    1,   12,  150,  20,  30,  20,       0,   1,    4,      true, false,  false, nil))
-  add(my_emitters, emitter.create(64, 64, 0,    50,   4,    1,   12,  20,  20,  30,  20,       0,   1,    4,      true, false,  false, nil))
-  add(my_emitters, emitter.create(64, 64, 0,    50,   4,    1,   12,  60,  20,  30,  20,       0,   1,    4,      true, false,  false, nil))
-  add(my_emitters, emitter.create(64, 64, 0,    50,   4,    1,   12,  100,  20,  30,  20,       0,   1,    4,      true, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      150,   20,       30,      0,       20,       4,      1,      0))
+  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      20,    20,       30,      0,       20,       4,      1,      0))
+  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      60,    20,       30,      0,       20,       4,      1,      0))
+  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      100,   20,       30,      0,       20,       4,      1,      0))
  elseif (emitter_string == "light particles") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(40, 40, 0.2,    0,   2,   0,   10,   0,   360,  20,    10,       0,   2,    1,       false, false,  false, nil))
-  add(my_emitters, emitter.create(86, 40, 0.2,    0,   2,   0,   10,   0,   360,  20,    10,       0,   2,    1,       false, false,  false, nil))
-  add(my_emitters, emitter.create(64, 80, 0.2,    0,   2,   0,   10,   0,   360,  20,    10,       0,   2,    1,       false, false,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(40, 40, 0.2,  0,   false, false, false,   10,  nil,     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
+  add(my_emitters, emitter.create(86, 40, 0.2,  0,   false, false, false,   10,  nil,     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
+  add(my_emitters, emitter.create(64, 80, 0.2,  0,   false, false, false,   10,  nil,     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
  elseif (emitter_string == "burst emission") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 90, 0,    20, 0,    3,   15,  70,  40,   10,    10,       15,   1,    3,      false, true,  false, nil))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 90, 0,    20,  true,  false, false,   15,  nil,     1,    3,      70,    40,       10,      15,      10,       0,      3,      0))
  elseif (emitter_string == "explosion") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    50,   1,    0,   5,   0,   360,  20,    10,       0,   1,    2,      false, true,  false, nil))
-  add(my_emitters, emitter.create(64, 64, 0,    50,   3,    0,   8,   0,   360,  20,    10,       0,   0,    2,      false, true,  false, {10,11,12}))
-  add(my_emitters, emitter.create(64, 64, 0,    50,   3,    0,   8,   0,   360,  15,    10,       0,   0,    1.5,      false, true,  false, {13,14,15}))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites,    life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    50,  true,  false, false,   5,   nil,        1,    2,      0,     360,      20,      0,       10,       1,      0,      0))
+  add(my_emitters, emitter.create(64, 64, 0,    50,  true,  false, false,   8,   {10,11,12}, 0,    2,      0,     360,      20,      0,       10,       3,      0,      0))
+  add(my_emitters, emitter.create(64, 64, 0,    50,  true,  false, false,   8,   {13,14,15}, 0,    1.5,    0,     360,      15,      0,       10,       3,      0,      0))
  elseif (emitter_string == "sprites!") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0,    0,   2,   0,   10,   0,   360,  20,    10,       0,   2,    1,       false, false,  false, {1}))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   10,  {1},     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
  elseif (emitter_string == "varying sprites") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 64, 0.1,    0,   2,   0,   10,   60,   60,  5,    25,       0,   1,    5,       false, false,  false, {2,3,4,5,6,7,8}))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites,         life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 64, 0.1,  0,   false, false, false,   10,  {2,3,4,5,6,7,8}, 1,    5,      60,    60,       5,       0,       25,       2,      0,      0))
  elseif (emitter_string == "fire") then
-  --                              x   y   freq  max  size  s/l  col  ang  a_sp  speed  speed_sp  v/l  life  life_sp  grav  burst  rnd-col, sprites
-  add(my_emitters, emitter.create(64, 80, 0.1,    30,  2,    0,   8,   60,  60,   10,    10,       5,   2,    3,      false, false,  false, nil))
-  add(my_emitters, emitter.create(64, 80, 0.2,    30,  2,    0,   8,   60,  60,   5,    10,       0,   2,    0,      false, false,  false, {16,17}))
-  add(my_emitters, emitter.create(64, 80, 0.2,    30,  2,    0,   8,   60,  60,   5,    10,       5,   2,    3,      false, false,  false, {18,19,20,21}))
+  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites,       life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
+  add(my_emitters, emitter.create(64, 80, 0.1,  30,  false, false, false,   8,   nil,           2,    3,      60,    60,       10,      5,       10,       2,      0,      0))
+  add(my_emitters, emitter.create(64, 80, 0.2,  30,  false, false, false,   8,   {16,17},       2,    0,      60,    60,       5,       0,       10,       2,      0,      0))
+  add(my_emitters, emitter.create(64, 80, 0.2,  30,  false, false, false,   8,   {18,19,20,21}, 2,    3,      60,    60,       5,       5,       10,       2,      0,      0))
  end
 end
 
