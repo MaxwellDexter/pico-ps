@@ -11,7 +11,7 @@ __lua__
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire"}
+emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp"}
 
 #include ps.lua
 
@@ -166,6 +166,16 @@ function spawn_emitter(emitter_string)
   add(my_emitters, emitter.create(64, 80, 0.1,  30,  false, false, false,   8,   nil,           2,    3,      60,    60,       10,      5,       10,       2,      0,      0))
   add(my_emitters, emitter.create(64, 80, 0.2,  30,  false, false, false,   8,   {16,17},       2,    0,      60,    60,       5,       0,       10,       2,      0,      0))
   add(my_emitters, emitter.create(64, 80, 0.2,  30,  false, false, false,   8,   {18,19,20,21}, 2,    3,      60,    60,       5,       5,       10,       2,      0,      0))
+ -- here is an example of using the set functions to create an emitter
+ elseif (emitter_string == "space warp") then
+  -- create the emitter using x,  y,  frequency, max_p
+  local warp = emitter.create(64, 64, 0, 0)
+  -- the emitter.create() function has optional arguments 
+  -- set the stuff you want to change
+  warp.set_speed(warp, 30, 200)
+  warp.set_life(warp, 0.7)
+  warp.set_size(warp, 0, 2)
+  add(my_emitters, warp)
  end
 end
 

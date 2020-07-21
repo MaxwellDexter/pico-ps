@@ -204,12 +204,12 @@ constructor parameters: (names have been shortened for readability)
                       an angle anywhere between 180-210. see the angle demo (red colour)
 - p_speed_initial:  the initial velocity of the particle.
                      0 won't go anywhere, 1 will be really slow. try 10 and adjust from there
-- p_speed_final:    velocity over lifetime. the velocity (speed) your particle will be traveling at when it dies.
+- p_speed_final:    The velocity speed your particle will be travelling at when it dies.
                      a value of 0 will make it slow down, a value higher than the given speed value will make it speed up.
 - p_speed_spread:   speed spread. random speed between speed and speed + speed_spread.
                      e.g. speed of 10 + speed_spread of 10 will produce a speed anywhere between 10 and 20.
 - p_size_initial:   the initial spawn size of the particle.
-- p_size_final:     size over lifetime; the size the particle will be when it dies.
+- p_size_final:     the size the particle will be when it dies.
 - p_size_spread:    the variance (spread) in the size for the particles. leave as 0 to turn off
 ]]
 
@@ -235,23 +235,23 @@ function emitter.create(x,y, frequency, max_p,
  p.frequency = frequency
  p.emit_time = frequency
  p.max_p = max_p
- p.gravity = gravity
- p.burst = burst
- p.rnd_colour = rnd_colour
+ p.gravity = gravity or false
+ p.burst = burst or false
+ p.rnd_colour = rnd_colour or false
 
  -- particle factory stuff
- p.p_colour = p_colour
- p.p_sprites = p_sprites
- p.p_life = p_life
- p.p_life_spread = p_life_spread
- p.p_angle = p_angle
- p.p_angle_spread = p_angle_spread
- p.p_speed_initial = p_speed_initial
- p.p_speed_final = p_speed_final
- p.p_speed_spread = p_speed_spread
- p.p_size_initial = p_size_initial
- p.p_size_final = p_size_final
- p.p_size_spread = p_size_spread
+ p.p_colour = p_colour or 7
+ p.p_sprites = p_sprites or nil
+ p.p_life = p_life or 1
+ p.p_life_spread = p_life_spread or 0
+ p.p_angle = p_angle or 0
+ p.p_angle_spread = p_angle_spread or 360
+ p.p_speed_initial = p_speed_initial or 10
+ p.p_speed_final = p_speed_final or 10
+ p.p_speed_spread = p_speed_spread or 0
+ p.p_size_initial = p_size_initial or 1
+ p.p_size_final = p_size_final or 1
+ p.p_size_spread = p_size_spread or 0
 
  return p
 end
@@ -287,6 +287,7 @@ end
 -- this is why the emitter has to know about the properties of the particle it's emmitting
 function emitter:get_new_particle()
  local sprite = nil
+ -- select random sprite from the sprites list
  if (self.p_sprites ~= nil) then sprite = self.p_sprites[flr(rnd(#self.p_sprites))+1] end
 
  local speed_spread = rnd(self.p_speed_spread)
@@ -356,4 +357,58 @@ end
 
 function emitter:is_emitting()
  return self.emitting
+end
+
+function emitter:set_pos(x, y)
+ self.pos = point2d.create(x,y)
+end
+
+function emitter:set_frequency(frequency)
+ self.frequency = frequency
+end
+
+function emitter:set_max_p(max_p)
+ self.max_p = max_p
+end
+
+function emitter:set_gravity(gravity)
+ self.gravity = gravity
+end
+
+function emitter:set_burst(burst)
+ self.burst = burst
+end
+
+function emitter:set_rnd_colour(rnd_colour)
+ self.rnd_colour = rnd_colour
+end
+
+function emitter:set_colour(colour)
+ self.p_colour = colour
+end
+
+function emitter:set_sprites(sprites)
+ self.p_sprites = sprites
+end
+
+function emitter:set_life(life, life_spread)
+ self.p_life = life
+ self.p_life_spread = life_spread or 0
+end
+
+function emitter:set_angle(angle, angle_spread)
+ self.p_angle = angle
+ self.p_angle_spread = angle_spread or 0
+end
+
+function emitter:set_speed(speed_initial, speed_final, speed_spread)
+ self.p_speed_initial = speed_initial
+ self.p_speed_final = speed_final or speed_initial
+ self.p_speed_spread = speed_spread or 0
+end
+
+function emitter:set_size(size_initial, size_final, size_spread)
+ self.p_size_initial = size_initial
+ self.p_size_final = size_final or size_initial
+ self.p_size_spread = size_spread or 0
 end

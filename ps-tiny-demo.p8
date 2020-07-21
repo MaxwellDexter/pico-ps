@@ -7,8 +7,7 @@ my_emitter = {}
 
 function _init()
  prev_time = time()
- --                          x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
- my_emitter = emitter.create(64, 64, 0,    50,  false, false, false,   7,   nil,     1,    2,      0,     360,      10,      10,      10,       1,      1,      0)
+ my_emitter = emitter.create(64, 64, 0, 50)
 end
 
 function _draw()
