@@ -8,7 +8,6 @@
 
 -- this version has no documentation! please see ps.lua for the docs.
 
--- globals
 prev_time = nil
 delta_time = nil
 
@@ -23,7 +22,6 @@ function calc_gravity(a)
  a.velocity.y = a.velocity.y + delta_time * gravity
 end
 
--- point2d
 point2d = {}
 point2d.__index = point2d
 function point2d.create(x,y)
@@ -34,7 +32,6 @@ function point2d.create(x,y)
  return p
 end
 
--- particle
 particle = {}
 particle.__index = particle
 function particle.create(x, y, gravity, colour, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
@@ -99,7 +96,6 @@ function particle:die()
  self.dead = true
 end
 
--- particle emitter
 emitter = {}
 emitter.__index = emitter
 function emitter.create(x,y, frequency, max_p, 
@@ -123,6 +119,9 @@ function emitter.create(x,y, frequency, max_p,
  p.gravity = gravity or false
  p.burst = burst or false
  p.rnd_colour = rnd_colour or false
+ p.use_emission = false
+ p.area_width = 0
+ p.area_height = 0
 
  p.p_colour = p_colour or 7
  p.p_sprites = p_sprites or nil
@@ -172,15 +171,25 @@ function emitter:get_new_particle()
  local speed_spread = rnd(self.p_speed_spread)
  local size_spread = rnd(self.p_size_spread)
 
+ local x = self.pos.x
+ local y = self.pos.y
+ if (self.use_emission) then
+
+  local width = self.area_width
+  local height = self.area_height
+  x += flr(rnd(width)) - (width / 2)
+  y += flr(rnd(height)) - (height / 2)
+ end
+
  local p = particle.create
  (
-  self.pos.x, self.pos.y,
+  x, y,
   self.gravity,
   self.get_colour(self), sprite,
   self.p_life + rnd(self.p_life_spread),
   self.p_angle + rnd(self.p_angle_spread),
   self.p_speed_initial + speed_spread, self.p_speed_final + speed_spread,
-  self.p_size_initial + size_spread, self.p_size_final + size_spread 
+  self.p_size_initial + size_spread, self.p_size_final + size_spread
  )
  return p
 end
@@ -259,6 +268,12 @@ end
 
 function emitter:set_rnd_colour(rnd_colour)
  self.rnd_colour = rnd_colour
+end
+
+function emitter:set_area(use_emission, width, height)
+ self.use_emission = use_emission
+ self.area_width = width or 0
+ self.area_height = height or 0
 end
 
 function emitter:set_colour(colour)

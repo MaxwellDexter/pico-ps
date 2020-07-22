@@ -11,7 +11,7 @@ __lua__
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp"}
+emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp", "rain"}
 
 #include ps.lua
 
@@ -176,6 +176,15 @@ function spawn_emitter(emitter_string)
   warp.set_life(warp, 0.7)
   warp.set_size(warp, 0, 2)
   add(my_emitters, warp)
+ elseif (emitter_string == "rain") then
+  local rain = emitter.create(64, 7, 0, 0)
+  rain.set_area(rain, true, 128, 0)
+  rain.set_gravity(rain, true)
+  rain.set_speed(rain, 0)
+  rain.set_colour(rain, 1)
+  rain.set_size(rain, 0)
+  rain.set_life(rain, 2, 1)
+  add(my_emitters, rain)
  end
 end
 

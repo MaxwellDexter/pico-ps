@@ -53,7 +53,7 @@ end
 
 -------------------------------------------------- point2d
 --[[
- this is a container class for two points. 
+ this is a container class for two points (a vector). 
  can be used for coordinates, velocity or anything else that requires 2 parts of data.
 ]]
 point2d = {}
@@ -238,6 +238,9 @@ function emitter.create(x,y, frequency, max_p,
  p.gravity = gravity or false
  p.burst = burst or false
  p.rnd_colour = rnd_colour or false
+ p.use_emission = false
+ p.area_width = 0
+ p.area_height = 0
 
  -- particle factory stuff
  p.p_colour = p_colour or 7
@@ -293,10 +296,20 @@ function emitter:get_new_particle()
  local speed_spread = rnd(self.p_speed_spread)
  local size_spread = rnd(self.p_size_spread)
 
+ local x = self.pos.x
+ local y = self.pos.y
+ if (self.use_emission) then
+  -- center it
+  local width = self.area_width
+  local height = self.area_height
+  x += flr(rnd(width)) - (width / 2)
+  y += flr(rnd(height)) - (height / 2)
+ end
+
  --(x,y, gravity, colour, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
  local p = particle.create
  (
-  self.pos.x, self.pos.y, -- pos
+  x, y, -- pos
   self.gravity, -- gravity
   self.get_colour(self), sprite, -- graphics
   self.p_life + rnd(self.p_life_spread), -- life
@@ -309,14 +322,14 @@ end
 
 function emitter:emit(dt)
  if (self.emitting) then
-  if (self.burst) then
+  if (self.burst) then -- burst!
    if (self.max_p <= 0) then
     self.max_p = 50 end
    for i=1,self.max_p do
     self.add_particle(self, self.get_new_particle(self))
    end
    self.emitting = false
-  else
+  else -- we're continuously emitting
    self.emit_time = self.emit_time - dt
    if (self.emit_time <= 0 and (self.max_p == 0 or #self.particles < self.max_p)) then
     self.add_particle(self, self.get_new_particle(self))
@@ -381,6 +394,12 @@ end
 
 function emitter:set_rnd_colour(rnd_colour)
  self.rnd_colour = rnd_colour
+end
+
+function emitter:set_area(use_emission, width, height)
+ self.use_emission = use_emission
+ self.area_width = width or 0
+ self.area_height = height or 0
 end
 
 function emitter:set_colour(colour)
