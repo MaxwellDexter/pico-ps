@@ -1,6 +1,6 @@
 # *pico-ps*: a PICO-8 Particle System
 
-This particle system is a lightweight and fast implementation for the fantasy console [PICO-8](https://www.lexaloffle.com/pico-8.php), currently around 230 lines of code.
+This particle system is a lightweight and fast implementation for the fantasy console [PICO-8](https://www.lexaloffle.com/pico-8.php).
 Play the web demo here: https://www.lexaloffle.com/bbs/?tid=33987
 
 # Features
@@ -16,19 +16,22 @@ Play the web demo here: https://www.lexaloffle.com/bbs/?tid=33987
 ## Future Features
 I'd like to get these features implemented next:
 - Colour over life
-- Easier emitter creation
+- Local space emission
+- ~~Easier emitter creation~~ done!
 - Sprite animation
 - Emission shapes / emission in area
 - Embedded smoothing
 - Further optimisation
 - Collision
+- ~~Rework backend to use entity-component system~~ not happening soz
 
 # How To Use
-I'd recommend downloading the project and running the `ps-demo.p8` demo to get a feel for the features that the system has. The code can be helpful on how to implement the system into your game, but you can get started quickly by viewing how the `ps-tiny-demo.p8` spawns a particle emitter in just 10 lines (!!).
+I'd recommend downloading the project and running the `ps-demo.p8` demo to get a feel for the features that the system has. The code can be helpful on how to implement the system into your game, but you can get started quickly by viewing how the `ps-tiny-demo.p8` spawns a particle emitter.
 
 Please look through the code in `ps.lua`, as there are some good comments on what everything does. Copy the code and view in a text editor of your choice, as it gets kinda horizontal.
 
-To use this, please download `ps.lua` (or `ps-lite.lua` if you're on a char diet) and put `#include ps.lua` at the top of your game code. This will include the contents of the code in your code, and you can create emitters wherever you like. Be sure to update and draw the emitters you have, and run the `update_time()` function (otherwise your emitters won't work! Emitters are created through the function in the table like `emitter.create(...)` where `...` is all of the arguments.
+To use this, please download `ps.lua` (or `ps-lite.lua` if you're on a char diet) and put `#include ps.lua` at the top of your game code. This will include the contents of the code in your code, and you can create emitters wherever you like. Be sure to update and draw the emitters you have, and run the `update_time()` function before updating the emitters (it depends on the udpated time!). Emitters are created through the function in the table like `emitter.create(...)` where `...` is all of the arguments. There is also a way to create emitters that is easier on the eyes using the optional arguments for `emitter.create()`. You can set pretty much every parameter the emitter uses this way. e.g.
+`emitter.set_speed(speed_initial, speed_final, speed_spread)` with `speed_final` and `speed_spread` being optional. This is the preferred way of creating emitters.
 
 Here is the high level UML:
 ![High Level UML for the emitter and particle.](https://github.com/MaxwellDexter/pico-ps/blob/master/readme_images/high-level-uml.png)
@@ -61,7 +64,7 @@ Steps for a successful emission:
 2. Add the emitter to either your global collection of entities, or your game object
 3. Call update() and draw() on the emitter each frame (using the game loop preferably)
 4. Voila you have an emitter
-
+#### Emitter Variables
 | Parameter       | Meaning                                                                                                                                                                                                                                                                                          | Example Value  |
 |-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
 | x               | The x coordinate the particles will spawn from                                                                                                                                                                                                                                                   | 64             |
@@ -82,3 +85,18 @@ Steps for a successful emission:
 | p_size_initial  | The initial spawn size of the particle. Is basically the diameter of the circle, 1 will produce a dot, 2 will produce a cross, 3 will produce a small circle etc.                                                                                                                                | 0              |
 | p_size_final    | The size the particle will be when it dies.                                                                                                                                                                                                                                                      | 5              |
 | p_size_spread   | The variance (spread) in the size for the particles. Leave as 0 to turn off                                                                                                                                                                                                                      | 3              |
+#### Set Functions
+| Function         | Parameters                                                                     |
+|------------------|--------------------------------------------------------------------------------|
+| set_pos()        | x, y                                                                           |
+| set_frequency()  | frequency                                                                      |
+| set_max_p        | max_p                                                                          |
+| set_gravity()    | gravity                                                                        |
+| set_burst()      | burst                                                                          |
+| set_rnd_colour() | rnd_colour                                                                     |
+| set_colour()     | colour                                                                         |
+| set_sprites()    | sprites                                                                        |
+| set_life()       | life, life_spread (default: 0)                                                 |
+| set_angle()      | angle, angle_spread (default: 360)                                             |
+| set_speed()      | speed_initial, speed_final (default: speed_initial), speed_spread (default: 0) |
+| set_size()       | size_initial, size_final (default: size_initial), size_spread (default: 0)     |
