@@ -119,7 +119,7 @@ function emitter.create(x,y, frequency, max_p,
  p.gravity = gravity or false
  p.burst = burst or false
  p.rnd_colour = rnd_colour or false
- p.use_emission = false
+ p.use_area = false
  p.area_width = 0
  p.area_height = 0
 
@@ -173,7 +173,7 @@ function emitter:get_new_particle()
 
  local x = self.pos.x
  local y = self.pos.y
- if (self.use_emission) then
+ if (self.use_area) then
 
   local width = self.area_width
   local height = self.area_height
@@ -270,8 +270,8 @@ function emitter:set_rnd_colour(rnd_colour)
  self.rnd_colour = rnd_colour
 end
 
-function emitter:set_area(use_emission, width, height)
- self.use_emission = use_emission
+function emitter:set_area(use_area, width, height)
+ self.use_area = use_area
  self.area_width = width or 0
  self.area_height = height or 0
 end
