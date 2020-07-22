@@ -12,6 +12,7 @@ Play the web demo here: https://www.lexaloffle.com/bbs/?tid=33987
  - Life spread
  - Angles and angle spread
  - Size over lifetime and size spread
+ - Emission areas
 
 ## Future Features
 I'd like to get these features implemented next:
@@ -19,10 +20,11 @@ I'd like to get these features implemented next:
 - Local space emission
 - ~~Easier emitter creation~~ done!
 - Sprite animation
-- Emission shapes / emission in area
+- ~~Emission shapes / emission in area~~ done!
 - Embedded smoothing
 - Further optimisation
 - Collision
+- Polish up demos
 - ~~Rework backend to use entity-component system~~ not happening soz
 
 # How To Use
@@ -74,6 +76,9 @@ Steps for a successful emission:
 | burst           | Is this a burst emitter? pass in 'true' for yes or 'false' for no. Will make the emitter shoot out particles and then immediately stop emitting. If you're hooking this up to an object that bursts whenever it does something, just call 'start_emit()' and it will be ready for the next burst | true           |
 | gravity         | Are the particles affected by gravity? pass in 'true' for yes or 'false' for no. Will be affected by whatever is in the calc_gravity(a) function                                                                                                                                                 | false          |
 | rnd_colour      | Do you want every particle to be a random colour? Pass in 'true' for yes or 'false' for no.                                                                                                                                                                                                      | true           |
+| use_area        | Do you want to use the emission area? true/false. If so, you will have to specify the width and height of the area.                                                                                                                                                                              | false          |
+| area_width      | The width of the emission area in pixels.                                                                                                                                                                                                                                                        | 64             |
+| area_height     | The height of the emission area in pixels.                                                                                                                                                                                                                                                       | 82             |
 | p_colour        | The colour of the sprite. Uses pico 8's colour system                                                                                                                                                                                                                                            | 7              |
 | p_sprites       | The sprites you want to display. if you don't want sprites, pass in 'nil'. Sprites are passed in as a list table and you can have any number of sprites greater than 0. i.e. pass in '{1}' or '{4, 56, 8, 17}' and the emitter will randomly choose one to pass to each new particle it creates. | {8, 9, 10, 11} |
 | p_life          | The time (in seconds) it takes for the particle to die. i.e. the time it will stay on screen. Needs a value greater than 0                                                                                                                                                                       | 4              |
@@ -94,6 +99,7 @@ Steps for a successful emission:
 | set_gravity()    | gravity                                                                        |
 | set_burst()      | burst                                                                          |
 | set_rnd_colour() | rnd_colour                                                                     |
+| set_area()       | use_area, width (default: 0), height (default: 0)                          |
 | set_colour()     | colour                                                                         |
 | set_sprites()    | sprites                                                                        |
 | set_life()       | life, life_spread (default: 0)                                                 |
