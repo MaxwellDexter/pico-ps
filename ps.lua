@@ -231,14 +231,7 @@ constructor parameters: (names have been shortened for readability)
 -- the constructor has to have a lot of stuff passed in so that it can create it's particles correctly
 emitter = {}
 emitter.__index = emitter
-function emitter.create(x,y, frequency, max_p, 
-     burst, gravity, rnd_colour,
-     p_colour, p_sprites,
-     p_life, p_life_spread,
-     p_angle, p_angle_spread,
-     p_speed_initial, p_speed_final, p_speed_spread,
-     p_size_initial, p_size_final, p_size_spread
-     )
+function emitter.create(x,y, frequency, max_p, burst, gravity)
  local p = {}
  setmetatable (p, emitter)
  p.particles = {}
@@ -252,24 +245,24 @@ function emitter.create(x,y, frequency, max_p,
  p.max_p = max_p
  p.gravity = gravity or false
  p.burst = burst or false
- p.rnd_colour = rnd_colour or false
+ p.rnd_colour = false
  p.use_area = false
  p.area_width = 0
  p.area_height = 0
 
  -- particle factory stuff
- p.p_colours = p_colour
- p.p_sprites = p_sprites or nil
- p.p_life = p_life or 1
- p.p_life_spread = p_life_spread or 0
- p.p_angle = p_angle or 0
- p.p_angle_spread = p_angle_spread or 360
- p.p_speed_initial = p_speed_initial or 10
- p.p_speed_final = p_speed_final or 10
- p.p_speed_spread = p_speed_spread or 0
- p.p_size_initial = p_size_initial or 1
- p.p_size_final = p_size_final or 1
- p.p_size_spread = p_size_spread or 0
+ p.p_colours = {1}
+ p.p_sprites = nil
+ p.p_life = 1
+ p.p_life_spread = 0
+ p.p_angle = 0
+ p.p_angle_spread = 360
+ p.p_speed_initial = 10
+ p.p_speed_final = 10
+ p.p_speed_spread = 0
+ p.p_size_initial = 1
+ p.p_size_final = 1
+ p.p_size_spread = 0
 
  return p
 end

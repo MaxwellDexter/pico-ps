@@ -11,7 +11,9 @@ __lua__
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp", "rain", "strobe warning"}
+emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp", "rain", "strobe warning", "whirly bird", "hypnotism"}
+
+bird_angle = 0
 
 #include ps.lua
 
@@ -49,8 +51,34 @@ end
 function update_demo()
  for e in all(my_emitters) do
   e.update(e, delta_time)
+  update_whirly_bird(e)
+  update_hypno(e)
  end
  get_input()
+end
+
+function update_hypno(e)
+ if (emitters[emitter_type] == "hypnotism") then
+   bird_angle += 10
+   if (bird_angle > 360) then bird_angle = 0 end
+   e.set_angle(e, bird_angle)
+  end
+end
+
+function update_whirly_bird(e)
+ if (emitters[emitter_type] == "whirly bird") then
+   bird_angle += 5
+   if (bird_angle > 360) then bird_angle = 0 end
+   e.set_angle(e, bird_angle)
+   local p = rotate_point(64, 64, 0.01, e.pos)
+   e.set_pos(e, p.x, p.y)
+  end
+end
+
+function rotate_point(ox, oy, angle, p)
+ p.x = cos(angle) * (p.x-ox) - sin(angle) * (p.y-oy) + ox
+ p.y = sin(angle) * (p.x-ox) + cos(angle) * (p.y-oy) + oy
+ return p
 end
 
 function get_input()
@@ -137,7 +165,7 @@ function spawn_emitter(emitter_string)
  elseif (emitter_string == "everything") then
   --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
   add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, true,    12,  nil,     1,    4,      0,     360,      20,      0,       20,       3,      0,      3))
- elseif (emitter_string == "water spout") then
+ elseif (emitter_string == "waterxxxspout") then
   --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
   add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      150,   20,       30,      0,       20,       4,      1,      0))
   add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      20,    20,       30,      0,       20,       4,      1,      0))
@@ -195,6 +223,37 @@ function spawn_emitter(emitter_string)
   strobe.set_speed(strobe, 20, 0, 20)
   strobe.set_life(strobe, 2, 2)
   add(my_emitters, strobe)
+ elseif(emitter_string == "whirly bird") then
+  local bird = emitter.create(80, 80, 0, 0)
+  bird.set_colours(bird, {8, 9, 10, 7})
+  bird.set_size(bird, 5, 0, 1)
+  bird.set_life(bird, 3)
+  bird.set_angle(bird, 0)
+  add(my_emitters, bird)
+ elseif(emitter_string == "hypnotism") then
+  local hypno = emitter.create(64, 64, 0, 0)
+  hypno.set_colours(hypno, {11, 14, 12, 13})
+  hypno.set_size(hypno, 0, 5)
+  hypno.set_angle(hypno, 0, 90)
+  hypno.set_rnd_colour(hypno, true)
+  hypno.set_life(hypno, 4)
+  hypno.set_speed(hypno, 12)
+  add(my_emitters, hypno)
+ elseif(emitter_string == "water spout") then
+  local spout = emitter.create(64, 80, 0, 0, false, true)
+  spout.set_colours(spout, {12})
+  spout.set_size(spout, 2, 0, 3)
+  spout.set_angle(spout, 90, 45)
+  spout.set_life(spout, 2, 2)
+  spout.set_speed(spout, 100, 50)
+  add(my_emitters, spout)
+  local spray = emitter.create(64, 80, 0, 0, false, true)
+  spray.set_colours({7})
+  spray.set_angle(spray, 90, 45)
+  spray.set_life(spray, 2, 2)
+  spray.set_speed(spray, 100, 50)
+  spray.set_size(spray, 0, 1)
+  add(my_emitters, spray)
  end
 end
 
