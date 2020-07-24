@@ -88,12 +88,11 @@ constructor parameters: (values are numbers unless specified)
 ]]
 particle = {}
 particle.__index = particle
-function particle.create(x, y, gravity, colour, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
+function particle.create(x, y, gravity, colours, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
  local p = {}
  setmetatable (p, particle)
 
  p.pos = point2d.create(x,y)
- p.colour = colour
  p.life_initial = life
  p.life = life
 
@@ -114,12 +113,18 @@ function particle.create(x, y, gravity, colour, sprite, life, angle, speed_initi
 
  p.sprite = sprite
 
+ p.colours = colours
+ p.colour_time = (1 / #p.colours) * p.life_initial
+ p.current_colour_time = p.colour_time
+ p.colours_index = 1
+ p.colour = p.colours[p.colours_index]
+
  return p
 end
 
 -- update: handles all of the values changing like life, gravity, size/life, vel/life, movement and dying
 function particle:update(dt)
- self.life = self.life - dt
+ self.life -= dt
 
  if (self.gravity) then
   calc_gravity(self)
@@ -136,6 +141,16 @@ function particle:update(dt)
   -- take the difference of original and future, divided by time, multiplied by delta time
   self.velocity.x = self.velocity.x - ((self.vel_initial.x-self.vel_final.x)/self.life_initial)*dt
   self.velocity.y = self.velocity.y - ((self.vel_initial.y-self.vel_final.y)/self.life_initial)*dt
+ end
+
+ -- changing the colour
+ if (#self.colours > 1) then
+  self.current_colour_time -= dt
+  if (self.current_colour_time < 0) then
+   self.colours_index += 1
+   self.colour = self.colours[self.colours_index]
+   self.current_colour_time = self.colour_time
+  end
  end
 
  -- moving the particle
@@ -243,7 +258,7 @@ function emitter.create(x,y, frequency, max_p,
  p.area_height = 0
 
  -- particle factory stuff
- p.p_colour = p_colour or 7
+ p.p_colours = p_colour
  p.p_sprites = p_sprites or nil
  p.p_life = p_life or 1
  p.p_life_spread = p_life_spread or 0
@@ -280,9 +295,13 @@ end
 
 function emitter:get_colour()
  if (self.rnd_colour) then
-  return flr(rnd(16))
+  if (#self.p_colours > 1) then
+   return {self.p_colours[flr(rnd(#self.p_colours))+1]}
+  else
+   return {flr(rnd(16))}
+  end
  else
-  return self.p_colour
+  return self.p_colours
  end
 end
 
@@ -402,8 +421,8 @@ function emitter:set_area(use_area, width, height)
  self.area_height = height or 0
 end
 
-function emitter:set_colour(colour)
- self.p_colour = colour
+function emitter:set_colours(colours)
+ self.p_colours = colours
 end
 
 function emitter:set_sprites(sprites)

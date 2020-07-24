@@ -11,7 +11,7 @@ __lua__
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp", "rain"}
+emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp", "rain", "strobe warning"}
 
 #include ps.lua
 
@@ -31,6 +31,7 @@ function draw_demo()
   print("press s/f to cycle examples", 1, 110, 7)
   print("press q to show/hide info", 1, 116, 7)
   print("particles: "..get_all_particles(), 1, 122, 7)
+  print("cpu: "..stat(1), 80, 122, 7)
  end
  for e in all(my_emitters) do
   e.draw(e)
@@ -117,7 +118,7 @@ end
 function spawn_emitter(emitter_string)
  if (emitter_string == "basic") then
   --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    50,  false, false, false,   7,   nil,     1,    2,      0,     360,      10,      10,      10,       1,      1,      0))
+  add(my_emitters, emitter.create(64, 64, 0,    50,  false, false, false,   {4, 9, 14},   nil,     1,    2,      0,     360,      10,      10,      10,       1,      1,      0))
  elseif (emitter_string == "angle spread") then
   --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
   add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   8,   nil,     2,    2,      90,    10,       10,      10,      10,       2,      1,      0))
@@ -170,21 +171,30 @@ function spawn_emitter(emitter_string)
  elseif (emitter_string == "space warp") then
   -- create the emitter using x,  y,  frequency, max_p
   local warp = emitter.create(64, 64, 0, 0)
-  -- the emitter.create() function has optional arguments 
+  -- the emitter.create() function has optional arguments
   -- set the stuff you want to change
   warp.set_speed(warp, 30, 200)
   warp.set_life(warp, 0.7)
   warp.set_size(warp, 0, 2)
+  warp.set_colours(warp, {5, 6, 7})
   add(my_emitters, warp)
  elseif (emitter_string == "rain") then
   local rain = emitter.create(64, 7, 0, 0)
   rain.set_area(rain, true, 128, 0)
   rain.set_gravity(rain, true)
   rain.set_speed(rain, 0)
-  rain.set_colour(rain, 12)
   rain.set_size(rain, 0)
   rain.set_life(rain, 2, 1)
+  rain.set_colours(rain, {1, 12})
   add(my_emitters, rain)
+ elseif(emitter_string == "strobe warning") then
+  local strobe = emitter.create(64, 64, 0, 0)
+  strobe.set_rnd_colour(strobe, true)
+  strobe.set_colours(strobe, {0})
+  strobe.set_size(strobe, 3, 0, 3)
+  strobe.set_speed(strobe, 20, 0, 20)
+  strobe.set_life(strobe, 2, 2)
+  add(my_emitters, strobe)
  end
 end
 
