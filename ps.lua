@@ -319,8 +319,8 @@ function emitter:set_rnd_colour(rnd_colour)
  self.rnd_colour = rnd_colour
 end
 
-function emitter:set_area(use_area, width, height)
- self.use_area = use_area
+function emitter:set_area(width, height)
+ self.use_area = width ~= nil and height ~= nil and (width > 0 or height > 0)
  self.area_width = width or 0
  self.area_height = height or 0
 end
