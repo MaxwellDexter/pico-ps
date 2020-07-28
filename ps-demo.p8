@@ -11,9 +11,9 @@ __lua__
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"basic", "angle spread", "life/speed/size spread", "size over life", "velocity over life", "gravity", "everything", "water spout", "light particles", "burst emission", "explosion", "sprites!", "varying sprites", "fire", "space warp", "rain", "strobe warning", "whirly bird", "hypnotism"}
+emitters = {"space warp", "water spout", "rain", "so many colours omg", "whirly bird", "hypnotism", "stars", "explosion", "confetti"}
 
-bird_angle = 0
+global_angle = 0
 
 #include ps.lua
 
@@ -53,32 +53,50 @@ function update_demo()
   e.update(e, delta_time)
   update_whirly_bird(e)
   update_hypno(e)
+  update_warp(e)
  end
  get_input()
 end
 
 function update_hypno(e)
  if (emitters[emitter_type] == "hypnotism") then
-   bird_angle += 10
-   if (bird_angle > 360) then bird_angle = 0 end
-   e.set_angle(e, bird_angle)
-  end
+  update_angle(10)
+  e.set_angle(e, global_angle)
+ end
+end
+
+function update_warp(e)
+ if (emitters[emitter_type] == "space warp") then
+  local p = rotate_around(5, point2d.create(64, 64), e.pos)
+  e.set_pos(e, p.x, p.y)
+ end
 end
 
 function update_whirly_bird(e)
  if (emitters[emitter_type] == "whirly bird") then
-   bird_angle += 5
-   if (bird_angle > 360) then bird_angle = 0 end
-   e.set_angle(e, bird_angle)
-   local p = rotate_point(64, 64, 0.01, e.pos)
+   update_angle(5)
+   e.set_angle(e, global_angle)
+   local p = rotate_janky(64, 64, 0.01, e.pos)
    e.set_pos(e, p.x, p.y)
   end
 end
 
-function rotate_point(ox, oy, angle, p)
+function rotate_janky(ox, oy, angle, p)
  p.x = cos(angle) * (p.x-ox) - sin(angle) * (p.y-oy) + ox
  p.y = sin(angle) * (p.x-ox) + cos(angle) * (p.y-oy) + oy
  return p
+end
+
+function rotate_around(angle, c, p)
+ angle /= 360 -- convert to 0-1
+ local rotatedx = cos(angle) * (p.x - c.x) - sin(angle) * (p.y-c.y) + c.x
+ local rotatedy = sin(angle) * (p.x - c.x) + cos(angle) * (p.y - c.y) + c.y
+ return point2d.create(rotatedx,rotatedy)
+end
+
+function update_angle(speed)
+ global_angle += speed
+ if (global_angle > 360) then global_angle = 0 end
 end
 
 function get_input()
@@ -144,70 +162,20 @@ function get_input()
 end
 
 function spawn_emitter(emitter_string)
- if (emitter_string == "basic") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    50,  false, false, false,   {4, 9, 14},   nil,     1,    2,      0,     360,      10,      10,      10,       1,      1,      0))
- elseif (emitter_string == "angle spread") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   8,   nil,     2,    2,      90,    10,       10,      10,      10,       2,      1,      0))
- elseif (emitter_string == "life/speed/size spread") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   3,   nil,     0,    5,      0,     360,      1,       1,       40,       1,      1,      4))
- elseif (emitter_string == "size over life") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0.5,  0,   false, false, false,   10,  nil,     1,    1,      0,     360,      20,      20,      0,        0,      5,      0))
- elseif (emitter_string == "velocity over life") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   11,  nil,     2,    0,      0,     360,      0,       50,      0,        1,      1,      0))
- elseif (emitter_string == "gravity") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    0,   false, true,  false,   9,   nil,     2,    3,      0,     180,      20,      20,      10,       2,      2,      0))
- elseif (emitter_string == "everything") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, true,    12,  nil,     1,    4,      0,     360,      20,      0,       20,       3,      0,      3))
- elseif (emitter_string == "waterxxxspout") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      150,   20,       30,      0,       20,       4,      1,      0))
-  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      20,    20,       30,      0,       20,       4,      1,      0))
-  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      60,    20,       30,      0,       20,       4,      1,      0))
-  add(my_emitters, emitter.create(64, 64, 0,    50,  false,  true, false,   12,  nil,     1,    4,      100,   20,       30,      0,       20,       4,      1,      0))
- elseif (emitter_string == "light particles") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(40, 40, 0.2,  0,   false, false, false,   10,  nil,     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
-  add(my_emitters, emitter.create(86, 40, 0.2,  0,   false, false, false,   10,  nil,     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
-  add(my_emitters, emitter.create(64, 80, 0.2,  0,   false, false, false,   10,  nil,     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
- elseif (emitter_string == "burst emission") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 90, 0,    20,  true,  false, false,   15,  nil,     1,    3,      70,    40,       10,      15,      10,       0,      3,      0))
- elseif (emitter_string == "explosion") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites,    life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    50,  true,  false, false,   5,   nil,        1,    2,      0,     360,      20,      0,       10,       1,      0,      0))
-  add(my_emitters, emitter.create(64, 64, 0,    50,  true,  false, false,   8,   {10,11,12}, 0,    2,      0,     360,      20,      0,       10,       3,      0,      0))
-  add(my_emitters, emitter.create(64, 64, 0,    50,  true,  false, false,   8,   {13,14,15}, 0,    1.5,    0,     360,      15,      0,       10,       3,      0,      0))
- elseif (emitter_string == "sprites!") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites, life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0,    0,   false, false, false,   10,  {1},     2,    1,      0,     360,      20,      0,       10,       2,      0,      0))
- elseif (emitter_string == "varying sprites") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites,         life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 64, 0.1,  0,   false, false, false,   10,  {2,3,4,5,6,7,8}, 1,    5,      60,    60,       5,       0,       25,       2,      0,      0))
- elseif (emitter_string == "fire") then
-  --                              x,  y,  freq, max, burst, grav,  rnd_col, col, sprites,       life, life_s, angle, angle_sp, speed_i, speed_f, speed_sp, size_i, size_f, size_sp
-  add(my_emitters, emitter.create(64, 80, 0.1,  30,  false, false, false,   8,   nil,           2,    3,      60,    60,       10,      5,       10,       2,      0,      0))
-  add(my_emitters, emitter.create(64, 80, 0.2,  30,  false, false, false,   8,   {16,17},       2,    0,      60,    60,       5,       0,       10,       2,      0,      0))
-  add(my_emitters, emitter.create(64, 80, 0.2,  30,  false, false, false,   8,   {18,19,20,21}, 2,    3,      60,    60,       5,       5,       10,       2,      0,      0))
  -- here is an example of using the set functions to create an emitter
- elseif (emitter_string == "space warp") then
+ if (emitter_string == "space warp") then
   -- create the emitter using x,  y,  frequency, max_p
-  local warp = emitter.create(64, 64, 0, 0)
+  local warp = emitter.create(70, 70, 11, 0)
   -- the emitter.create() function has optional arguments
   -- set the stuff you want to change
   warp.set_speed(warp, 30, 200)
-  warp.set_life(warp, 0.7)
-  warp.set_size(warp, 0, 2)
-  warp.set_colours(warp, {5, 6, 7})
+  warp.set_life(warp, 0.8)
+  warp.set_size(warp, 0, 2, 0.5, 0)
+  warp.set_colours(warp, {7, 8, 11, 12, 14})
+  warp.set_rnd_colour(warp, true)
   add(my_emitters, warp)
  elseif (emitter_string == "rain") then
-  local rain = emitter.create(64, 7, 0, 0)
+  local rain = emitter.create(64, 7, 2, 0)
   rain.set_area(rain, true, 128, 0)
   rain.set_gravity(rain, true)
   rain.set_speed(rain, 0)
@@ -215,23 +183,24 @@ function spawn_emitter(emitter_string)
   rain.set_life(rain, 2, 1)
   rain.set_colours(rain, {1, 12})
   add(my_emitters, rain)
- elseif(emitter_string == "strobe warning") then
-  local strobe = emitter.create(64, 64, 0, 0)
+ elseif(emitter_string == "so many colours omg") then
+  local strobe = emitter.create(64, 64, 2, 0)
   strobe.set_rnd_colour(strobe, true)
   strobe.set_colours(strobe, {0})
-  strobe.set_size(strobe, 3, 0, 3)
-  strobe.set_speed(strobe, 20, 0, 20)
-  strobe.set_life(strobe, 2, 2)
+  strobe.set_size(strobe, 3, 0, 3, 0)
+  strobe.set_speed(strobe, 30, 0, 20, 0)
+  strobe.set_life(strobe, 3)
+  strobe.set_area(strobe, true, 20, 20)
   add(my_emitters, strobe)
  elseif(emitter_string == "whirly bird") then
-  local bird = emitter.create(80, 80, 0, 0)
+  local bird = emitter.create(80, 80, 0.4, 0)
   bird.set_colours(bird, {8, 9, 10, 7})
   bird.set_size(bird, 5, 0, 1)
   bird.set_life(bird, 3)
   bird.set_angle(bird, 0)
   add(my_emitters, bird)
  elseif(emitter_string == "hypnotism") then
-  local hypno = emitter.create(64, 64, 0, 0)
+  local hypno = emitter.create(64, 64, 1, 0)
   hypno.set_colours(hypno, {11, 14, 12, 13})
   hypno.set_size(hypno, 0, 5)
   hypno.set_angle(hypno, 0, 90)
@@ -240,21 +209,57 @@ function spawn_emitter(emitter_string)
   hypno.set_speed(hypno, 12)
   add(my_emitters, hypno)
  elseif(emitter_string == "water spout") then
-  local spout = emitter.create(64, 80, 0, 0, false, true)
-  spout.set_colours(spout, {12})
+  local spout = emitter.create(110, 90, 1, 0, false, true)
+  spout.set_colours(spout, {12, 1})
   spout.set_size(spout, 2, 0, 3)
   spout.set_angle(spout, 90, 45)
   spout.set_life(spout, 2, 2)
   spout.set_speed(spout, 100, 50)
-  add(my_emitters, spout)
-  local spray = emitter.create(64, 80, 0, 0, false, true)
-  spray.set_colours({7})
+  local spray = emitter.create(110, 90, 1, 0, false, true)
+  spray.set_colours(spray, {7, 6, 5})
   spray.set_angle(spray, 90, 45)
   spray.set_life(spray, 2, 2)
   spray.set_speed(spray, 100, 50)
   spray.set_size(spray, 0, 1)
   add(my_emitters, spray)
+  add(my_emitters, spout)
+ elseif(emitter_string == "stars") then
+  local stars = emitter.create(0, 64, 0.2, 0)
+  stars.set_area(stars, true, 0, 128)
+  stars.set_colours(stars, {7, 6, 5, 1})
+  stars.set_rnd_colour(stars, true)
+  stars.set_size(stars, 0, 0, 2)
+  stars.set_speed(stars, 10, 10, 30)
+  stars.set_life(stars, 4, 4)
+  stars.set_angle(stars, 0, 0)
+  add(my_emitters, stars)
+ elseif(emitter_string == "explosion") then
+  local explo = emitter.create(64, 64, 0, 10, true)
+  explo.set_size(explo, 4, 0, 3, 0)
+  explo.set_speed(explo, 0)
+  explo.set_life(explo, 1)
+  explo.set_colours(explo, {7, 6, 5})
+  explo.set_area(explo, true, 30, 30)
+  add(my_emitters, explo)
+ elseif(emitter_string == "confetti") then
+  left = create_confetti()
+  left.set_angle(left, 30, 45)
+  add(my_emitters, left)
+  right = create_confetti()
+  right.set_angle(right, 105, 45)
+  right.set_pos(right, 128, 90)
+  add(my_emitters, right)
  end
+end
+
+function create_confetti()
+ local confet = emitter.create(0, 90, 0, 50, true, true)
+ confet.set_size(confet, 0, 0, 2)
+ confet.set_speed(confet, 50, 50, 50)
+ confet.set_colours(confet, {7, 8, 9, 10, 11, 12, 13, 14, 15})
+ confet.set_rnd_colour(confet, true)
+ confet.set_life(confet, 1, 1, 2)
+ return confet
 end
 
 -------------------------------------------------- system functions

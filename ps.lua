@@ -221,14 +221,13 @@ constructor parameters: (names have been shortened for readability)
                      0 won't go anywhere, 1 will be really slow. try 10 and adjust from there
 - p_speed_final:    The velocity speed your particle will be travelling at when it dies.
                      a value of 0 will make it slow down, a value higher than the given speed value will make it speed up.
-- p_speed_spread:   speed spread. random speed between speed and speed + speed_spread.
+- p_speed_spread_initial:   speed spread. random speed between speed and speed + speed_spread.
                      e.g. speed of 10 + speed_spread of 10 will produce a speed anywhere between 10 and 20.
 - p_size_initial:   the initial spawn size of the particle.
 - p_size_final:     the size the particle will be when it dies.
-- p_size_spread:    the variance (spread) in the size for the particles. leave as 0 to turn off
+- p_size_spread_initial:    the variance (spread) in the size for the particles. leave as 0 to turn off
 ]]
 
--- the constructor has to have a lot of stuff passed in so that it can create it's particles correctly
 emitter = {}
 emitter.__index = emitter
 function emitter.create(x,y, frequency, max_p, burst, gravity)
@@ -259,10 +258,12 @@ function emitter.create(x,y, frequency, max_p, burst, gravity)
  p.p_angle_spread = 360
  p.p_speed_initial = 10
  p.p_speed_final = 10
- p.p_speed_spread = 0
+ p.p_speed_spread_initial = 0
+ p.p_speed_spread_final = 0
  p.p_size_initial = 1
  p.p_size_final = 1
- p.p_size_spread = 0
+ p.p_size_spread_initial = 0
+ p.p_size_spread_final = 0
 
  return p
 end
@@ -305,9 +306,6 @@ function emitter:get_new_particle()
  -- select random sprite from the sprites list
  if (self.p_sprites ~= nil) then sprite = self.p_sprites[flr(rnd(#self.p_sprites))+1] end
 
- local speed_spread = rnd(self.p_speed_spread)
- local size_spread = rnd(self.p_size_spread)
-
  local x = self.pos.x
  local y = self.pos.y
  if (self.use_area) then
@@ -326,8 +324,8 @@ function emitter:get_new_particle()
   self.get_colour(self), sprite, -- graphics
   self.p_life + rnd(self.p_life_spread), -- life
   self.p_angle + rnd(self.p_angle_spread), -- angle
-  self.p_speed_initial + speed_spread, self.p_speed_final + speed_spread, -- speed
-  self.p_size_initial + size_spread, self.p_size_final + size_spread -- size 
+  self.p_speed_initial + rnd(self.p_speed_spread_initial), self.p_speed_final + rnd(self.p_speed_spread_final), -- speed
+  self.p_size_initial + rnd(self.p_size_spread_initial), self.p_size_final + rnd(self.p_size_spread_final) -- size 
  )
  return p
 end
@@ -342,10 +340,18 @@ function emitter:emit(dt)
    end
    self.emitting = false
   else -- we're continuously emitting
-   self.emit_time = self.emit_time - dt
-   if (self.emit_time <= 0 and (self.max_p == 0 or #self.particles < self.max_p)) then
-    self.add_particle(self, self.get_new_particle(self))
-    self.emit_time = self.frequency
+   if (self.frequency >= 1) then
+    if (self.max_p == 0 or #self.particles + self.frequency < self.max_p) then
+     for i=1, self.frequency do
+      self.add_particle(self, self.get_new_particle(self))
+     end
+    end
+   else
+    self.emit_time += self.frequency
+    if (self.emit_time >= 1 and (self.max_p == 0 or #self.particles < self.max_p)) then
+     self.add_particle(self, self.get_new_particle(self))
+     self.emit_time -= 1
+    end
    end
   end
  end
@@ -432,14 +438,16 @@ function emitter:set_angle(angle, angle_spread)
  self.p_angle_spread = angle_spread or 0
 end
 
-function emitter:set_speed(speed_initial, speed_final, speed_spread)
+function emitter:set_speed(speed_initial, speed_final, speed_spread_initial, speed_spread_final)
  self.p_speed_initial = speed_initial
  self.p_speed_final = speed_final or speed_initial
- self.p_speed_spread = speed_spread or 0
+ self.p_speed_spread_initial = speed_spread_initial or 0
+ self.p_speed_spread_final = speed_spread_final or self.p_speed_spread_initial
 end
 
-function emitter:set_size(size_initial, size_final, size_spread)
+function emitter:set_size(size_initial, size_final, size_spread_initial, speed_spread_final)
  self.p_size_initial = size_initial
  self.p_size_final = size_final or size_initial
- self.p_size_spread = size_spread or 0
+ self.p_size_spread_initial = size_spread_initial or 0
+ self.p_size_spread_final = speed_spread_final or self.p_size_spread_initial
 end
