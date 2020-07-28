@@ -7,7 +7,7 @@ my_emitter = {}
 
 function _init()
  prev_time = time()
- my_emitter = emitter.create(64, 64, 0, 50)
+ my_emitter = emitter.create(64, 64, 1, 50)
 end
 
 function _draw()

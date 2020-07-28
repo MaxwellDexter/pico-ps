@@ -7,32 +7,9 @@
 ---------------------------
 
 --[[
-documentation (tutorial)
-hello, welcome to the particle system.
-what do you need to know before using this code in your game?
-first, run the demo to get a feel for what's going on.
-then look through the code to actually see what's going on.
-
-start with the particle object, then the emitter object and then the demo code.
-the particle is fairly straightforward, it is an object that displays itself and moves itself.
-the emitter is the source of all particles, only use this to create particles. fyi it also has a huge constructor.
-the demo code will be helpful for setting up the emitters and some upkeep of them.
-you can replace these with your own: gravity calculations or point2d containers
-
-please remember to update the variables 'prev_time' and 'delta_time' in your update loop!
-
-how the time calculations work:
-1. the time in the previous update is stored in prev_time.
-2. in the next update call, prev_time is taken (minus) from the current time to get the change in time.
-3. the change in time (delta_time) is sent to the emitters so that they can update their particle's fields with it.
-4. using delta_time means that particles can perform their calculations as they were intended to, regardless of frame rate.
-   even if the frame rate was 1 frame per second, particles with a 3 second lifetime will only exist for 3 seconds, even if that is 3 frames.
-
-good luck and happy coding!
-
-feel free to contact me if you have any questions.
-itch: https://maxwelldexter.itch.io/
-twitter: @KearneyMax
+    feel free to contact me if you have any questions.
+    itch: https://maxwelldexter.itch.io/
+    twitter: @KearneyMax
 ]]
 
 -------------------------------------------------- globals
@@ -52,10 +29,8 @@ function calc_gravity(a)
 end
 
 -------------------------------------------------- point2d
---[[
- this is a container class for two points (a vector). 
- can be used for coordinates, velocity or anything else that requires 2 parts of data.
-]]
+-- this is a container class for two points (a vector). 
+-- can be used for coordinates, velocity or anything else that requires 2 parts of data.
 point2d = {}
 point2d.__index = point2d
 function point2d.create(x,y)
@@ -67,25 +42,6 @@ function point2d.create(x,y)
 end
 
 -------------------------------------------------- particle
---[[
-particle tutorial: 
-you likely will never come into contact with the particle object in code, all interfacing should be done through the emitter
- unless you are modifying how the particles work.
-still have a look at how this works though.
-
-constructor parameters: (values are numbers unless specified)
-- x, y:           the coordinates the particle spawns at
-- gravity:        is this particle affected by gravity? true or false
-- colour:         the colour it is. uses pico 8's colour system.
-- sprite:         the sprite it displays. will overwrite the colour. nil or sprite number.
-- life:           the lifetime of the particle. in seconds.
-- angle:          the angle you want the particle to come flying out at in radians. range is 0-360. 
-                   however, 0 angle is coming out at an eastward direction and it travels anticlockwise
-- speed_initial:  the speed you want the particle to start moving at (try 10)
-- speed_final:    the velocity you want the particle to finish at when it dies
-- size_initial:   the particle's original size
-- size_final:     the size you want the particle to grow/shrink to
-]]
 particle = {}
 particle.__index = particle
 function particle.create(x, y, gravity, colours, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
@@ -177,57 +133,6 @@ function particle:die()
 end
 
 -------------------------------------------------- particle emitter
---[[
-emitter tutorial:
-the emitter is basically the 'spawner' of the particles. the particle is the thing you see, and the emitter is what makes it appear.
-this is why you have to pass in a lot more details to the emitter than you do the particle.
-the emitter is set up so you can have multiple running in the same game, either added to your world's entities collection or your game object.
-steps for a successful emission
-1. construct the emitter with all of the arguments passed in
-   yes, it's huge but if you use the guiding line it will greatly help you to construct your emitters.
-   check the 'spawn_emitter(emitter_string)' function to see the constructors with the commented line on top
-2. add the emitter to either your global collection of entities, or your game object
-3. call update() and draw() on the emitter each frame (using the game loop preferably)
-4. voila you have an emitter
-
-constructor parameters: (names have been shortened for readability)
-- x:                the x coordinate the particles will spawn from
-- y:                the y coordinate the particles will spawn from
-- frequency:        the frequency between emissions in seconds. 0 will spawn every frame, 1 will spawn one particle every frame
-- max_p:            the maximum number of particles the emitter is allowed to spawn. 0 = unlimited.
-- burst:            is this a burst emitter? pass in 'true' for yes or 'false' for no.
-                     will make the emitter shoot out particles and then immediately stop emitting.
-                     if you're hooking this up to an object that bursts whenever it does something,
-                      just call 'start_emit()' and it will be ready for the next burst
-- gravity:          are the particles affected by gravity? pass in 'true' for yes or 'false' for no.
-                     will be affected by whatever is in the calc_gravity(a) function
-- rnd_colour:       do you want every particle to be a random colour? pass in 'true' for yes or 'false' for no. 
-- p_colour:         the colour of the sprite. uses pico 8's colour system
-- p_sprites:        the sprites you want to display. if you don't want sprites, pass in 'nil'. 
-                     sprites are passed in as a list table and you can have any number of sprites greater than 0.
-                     i.e. pass in '{1}' or '{4, 56, 8, 17}' and the emitter will randomly choose one to pass to 
-                      each new particle it creates.
-- p_life:           the time (in seconds) it takes for the particle to die. i.e. the time it will stay on screen. 
-                     needs a value greater than 0
-- p_life_spread:    life spread. randomness of life length.
-                     value of 0 = same lifetime for every particle, value > 0 = varying lifetimes
-- p_angle:          the angle at which the particles will be emitted in degrees. 
-                     0 comes out east (right), and it goes anti-clockwise. 
-                     90 degrees will be north (up), 180 degrees comes out west (left) etc.
-- p_angle_spread:   angle spread. choosing to spawn your particles in a random area of angle.
-                     e.g. an angle value of 180 and a spread value of 30 will spawn your particles with
-                      an angle anywhere between 180-210. see the angle demo (red colour)
-- p_speed_initial:  the initial velocity of the particle.
-                     0 won't go anywhere, 1 will be really slow. try 10 and adjust from there
-- p_speed_final:    The velocity speed your particle will be travelling at when it dies.
-                     a value of 0 will make it slow down, a value higher than the given speed value will make it speed up.
-- p_speed_spread_initial:   speed spread. random speed between speed and speed + speed_spread.
-                     e.g. speed of 10 + speed_spread of 10 will produce a speed anywhere between 10 and 20.
-- p_size_initial:   the initial spawn size of the particle.
-- p_size_final:     the size the particle will be when it dies.
-- p_size_spread_initial:    the variance (spread) in the size for the particles. leave as 0 to turn off
-]]
-
 emitter = {}
 emitter.__index = emitter
 function emitter.create(x,y, frequency, max_p, burst, gravity)
