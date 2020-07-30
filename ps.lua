@@ -327,68 +327,70 @@ function emitter:is_emitting()
  return self.emitting
 end
 
-function emitter:set_pos(x, y)
- self.pos = point2d.create(x,y)
+-- setter functions
+
+function ps_set_pos(e, x, y)
+ e.pos = point2d.create(x,y)
 end
 
-function emitter:set_frequency(frequency)
- self.frequency = frequency
+function ps_set_frequency(e, frequency)
+ e.frequency = frequency
 end
 
-function emitter:set_max_p(max_p)
- self.max_p = max_p
+function ps_set_max_p(e, max_p)
+ e.max_p = max_p
 end
 
-function emitter:set_gravity(gravity)
- self.gravity = gravity
+function ps_set_gravity(e, gravity)
+ e.gravity = gravity
 end
 
-function emitter:set_burst(burst)
- self.burst = burst
+function ps_set_burst(e, burst)
+ e.burst = burst
 end
 
-function emitter:set_rnd_colour(rnd_colour)
- self.rnd_colour = rnd_colour
+function ps_set_rnd_colour(e, rnd_colour)
+ e.rnd_colour = rnd_colour
 end
 
-function emitter:set_rnd_sprite(rnd_sprite)
- self.rnd_sprite = rnd_sprite
+function ps_set_rnd_sprite(e, rnd_sprite)
+ e.rnd_sprite = rnd_sprite
 end
 
-function emitter:set_area(width, height)
- self.use_area = width ~= nil and height ~= nil and (width > 0 or height > 0)
- self.area_width = width or 0
- self.area_height = height or 0
+function ps_set_area(e, width, height)
+ e.use_area = width ~= nil and height ~= nil and (width > 0 or height > 0)
+ e.area_width = width or 0
+ e.area_height = height or 0
 end
 
-function emitter:set_colours(colours)
- self.p_colours = colours
+function ps_set_colours(e, colours)
+ e.p_colours = colours
 end
 
-function emitter:set_sprites(sprites)
- self.p_sprites = sprites
+function ps_set_sprites(e, sprites)
+ e.p_sprites = sprites
 end
 
-function emitter:set_life(life, life_spread)
- self.p_life = life
- self.p_life_spread = life_spread or 0
+function ps_set_life(e, life, life_spread)
+ e.p_life = life
+ e.p_life_spread = life_spread or 0
 end
 
-function emitter:set_angle(angle, angle_spread)
- self.p_angle = angle
- self.p_angle_spread = angle_spread or 0
+function ps_set_angle(e, angle, angle_spread)
+ e.p_angle = angle
+ e.p_angle_spread = angle_spread or 0
 end
 
-function emitter:set_speed(speed_initial, speed_final, speed_spread_initial, speed_spread_final)
- self.p_speed_initial = speed_initial
- self.p_speed_final = speed_final or speed_initial
- self.p_speed_spread_initial = speed_spread_initial or 0
- self.p_speed_spread_final = speed_spread_final or self.p_speed_spread_initial
+function ps_set_speed(e, speed_initial, speed_final, speed_spread_initial, speed_spread_final)
+ e.p_speed_initial = speed_initial
+ e.p_speed_final = speed_final or speed_initial
+ e.p_speed_spread_initial = speed_spread_initial or 0
+ e.p_speed_spread_final = speed_spread_final or e.p_speed_spread_initial
 end
 
-function emitter:set_size(size_initial, size_final, size_spread_initial, size_spread_final)
- self.p_size_initial = size_initial
- self.p_size_final = size_final or size_initial
- self.p_size_spread_initial = size_spread_initial or 0
- self.p_size_spread_final = size_spread_final or self.p_size_spread_initial
+function ps_set_size(e, size_initial, size_final, size_spread_initial, size_spread_final)
+ e.p_size_initial = size_initial
+ e.p_size_final = size_final or size_initial
+ e.p_size_spread_initial = size_spread_initial or 0
+ e.p_size_spread_final = size_spread_final or e.p_size_spread_initial
 end
