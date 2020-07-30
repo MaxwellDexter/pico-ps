@@ -44,7 +44,7 @@ end
 -------------------------------------------------- particle
 particle = {}
 particle.__index = particle
-function particle.create(x, y, gravity, colours, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
+function particle.create(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
  local p = {}
  setmetatable (p, particle)
 
@@ -67,13 +67,25 @@ function particle.create(x, y, gravity, colours, sprite, life, angle, speed_init
  p.size_initial = size_initial
  p.size_final = size_final
 
- p.sprite = sprite
+ p.sprites = sprites
+ if (p.sprites ~= nil) then
+  p.sprite_time = (1 / #p.sprites) * p.life_initial
+  p.current_sprite_time = p.sprite_time
+  p.sprites_index = 1
+  p.sprite = p.sprites[p.sprites_index]
+ else
+  p.sprite = nil
+ end
 
  p.colours = colours
- p.colour_time = (1 / #p.colours) * p.life_initial
- p.current_colour_time = p.colour_time
- p.colours_index = 1
- p.colour = p.colours[p.colours_index]
+ if (colours ~= nil) then
+  p.colour_time = (1 / #p.colours) * p.life_initial
+  p.current_colour_time = p.colour_time
+  p.colours_index = 1
+  p.colour = p.colours[p.colours_index]
+ else
+  p.colour = nil
+ end
 
  return p
 end
@@ -100,12 +112,22 @@ function particle:update(dt)
  end
 
  -- changing the colour
- if (#self.colours > 1) then
+ if (self.colours ~= nil and #self.colours > 1) then
   self.current_colour_time -= dt
   if (self.current_colour_time < 0) then
    self.colours_index += 1
    self.colour = self.colours[self.colours_index]
    self.current_colour_time = self.colour_time
+  end
+ end
+
+ -- changing the sprite
+ if (self.sprites ~= nil and #self.sprites > 1) then
+  self.current_sprite_time -= dt
+  if (self.current_sprite_time < 0) then
+   self.sprites_index += 1
+   self.sprite = self.sprites[self.sprites_index]
+   self.current_sprite_time = self.sprite_time
   end
  end
 
@@ -122,8 +144,10 @@ end
 function particle:draw()
  if (self.sprite ~= nil) then
   spr(self.sprite, self.pos.x, self.pos.y)
- else
+ elseif (self.colour ~= nil) then
   circfill(self.pos.x, self.pos.y, self.size, self.colour)
+ else
+  error("The particle had no graphics! Please supply sprites or colours!")
  end
 end
 
@@ -150,6 +174,7 @@ function emitter.create(x,y, frequency, max_p, burst, gravity)
  p.gravity = gravity or false
  p.burst = burst or false
  p.rnd_colour = false
+ p.rnd_sprite = false
  p.use_area = false
  p.area_width = 0
  p.area_height = 0
@@ -207,9 +232,11 @@ end
 -- factory method, creates a new particle based on the values set + random
 -- this is why the emitter has to know about the properties of the particle it's emmitting
 function emitter:get_new_particle()
- local sprite = nil
+ local sprites = self.p_sprites
  -- select random sprite from the sprites list
- if (self.p_sprites ~= nil) then sprite = self.p_sprites[flr(rnd(#self.p_sprites))+1] end
+ if (self.rnd_sprite and self.p_sprites ~= nil) then
+  sprites = {self.p_sprites[flr(rnd(#self.p_sprites))+1]}
+ end
 
  local x = self.pos.x
  local y = self.pos.y
@@ -226,11 +253,11 @@ function emitter:get_new_particle()
  (
   x, y, -- pos
   self.gravity, -- gravity
-  self.get_colour(self), sprite, -- graphics
-  self.p_life + rnd(self.p_life_spread), -- life
-  self.p_angle + rnd(self.p_angle_spread), -- angle
-  self.p_speed_initial + rnd(self.p_speed_spread_initial), self.p_speed_final + rnd(self.p_speed_spread_final), -- speed
-  self.p_size_initial + rnd(self.p_size_spread_initial), self.p_size_final + rnd(self.p_size_spread_final) -- size 
+  self.get_colour(self), sprites, -- graphics
+  self.p_life + get_rnd_spread(self.p_life_spread), -- life
+  self.p_angle + get_rnd_spread(self.p_angle_spread), -- angle
+  self.p_speed_initial + get_rnd_spread(self.p_speed_spread_initial), self.p_speed_final + get_rnd_spread(self.p_speed_spread_final), -- speed
+  self.p_size_initial + get_rnd_spread(self.p_size_spread_initial), self.p_size_final + get_rnd_spread(self.p_size_spread_final) -- size 
  )
  return p
 end
@@ -246,14 +273,14 @@ function emitter:emit(dt)
    self.emitting = false
   else -- we're continuously emitting
    if (self.frequency >= 1) then
-    if (self.max_p == 0 or #self.particles + self.frequency < self.max_p) then
+    if (self.max_p == 0 or #self.particles + self.frequency <= self.max_p) then
      for i=1, self.frequency do
       self.add_particle(self, self.get_new_particle(self))
      end
     end
    else
     self.emit_time += self.frequency
-    if (self.emit_time >= 1 and (self.max_p == 0 or #self.particles < self.max_p)) then
+    if (self.emit_time >= 1 and (self.max_p == 0 or #self.particles <= self.max_p)) then
      self.add_particle(self, self.get_new_particle(self))
      self.emit_time -= 1
     end
@@ -281,6 +308,11 @@ function emitter:remove_dead()
   del(self.particles, p)
  end
  self.to_remove = {}
+end
+
+-- will randomise even if it is negative
+function get_rnd_spread(spread)
+ return rnd(spread * sgn(spread)) * sgn(spread)
 end
 
 function emitter:start_emit()
@@ -319,6 +351,10 @@ function emitter:set_rnd_colour(rnd_colour)
  self.rnd_colour = rnd_colour
 end
 
+function emitter:set_rnd_sprite(rnd_sprite)
+ self.rnd_sprite = rnd_sprite
+end
+
 function emitter:set_area(width, height)
  self.use_area = width ~= nil and height ~= nil and (width > 0 or height > 0)
  self.area_width = width or 0
@@ -350,9 +386,9 @@ function emitter:set_speed(speed_initial, speed_final, speed_spread_initial, spe
  self.p_speed_spread_final = speed_spread_final or self.p_speed_spread_initial
 end
 
-function emitter:set_size(size_initial, size_final, size_spread_initial, speed_spread_final)
+function emitter:set_size(size_initial, size_final, size_spread_initial, size_spread_final)
  self.p_size_initial = size_initial
  self.p_size_final = size_final or size_initial
  self.p_size_spread_initial = size_spread_initial or 0
- self.p_size_spread_final = speed_spread_final or self.p_size_spread_initial
+ self.p_size_spread_final = size_spread_final or self.p_size_spread_initial
 end
