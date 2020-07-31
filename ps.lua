@@ -327,6 +327,20 @@ function emitter:is_emitting()
  return self.emitting
 end
 
+function emitter:clone()
+ local new = emitter.create(self.pos.x, self.pos.y, self.frequency, self.max_p, self.burst, self.gravity)
+ ps_set_rnd_colour(new, self.rnd_colour)
+ ps_set_rnd_sprite(new, self.rnd_sprite)
+ ps_set_area(new, self.area_width, self.area_height)
+ ps_set_colours(new, self.p_colours)
+ ps_set_sprites(new, self.p_sprites)
+ ps_set_life(new, self.p_life, self.p_life_spread)
+ ps_set_angle(new, self.p_angle, self.p_angle_spread)
+ ps_set_speed(new, self.p_speed_initial, self.p_speed_final, self.p_speed_spread_initial, self.p_speed_spread_final)
+ ps_set_size(new, self.p_size_initial, self.p_size_final, self.p_size_spread_initial, self.p_size_spread_final)
+ return new
+end
+
 -- setter functions
 
 function ps_set_pos(e, x, y)
