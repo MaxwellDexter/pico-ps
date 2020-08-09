@@ -35,9 +35,7 @@ function draw_demo()
   print("particles: "..get_all_particles(), 1, 122, 7)
   print("cpu: "..stat(1), 80, 122, 7)
  end
- for e in all(my_emitters) do
-  e.draw(e)
- end
+ foreach(my_emitters, function(obj) obj:draw() end)
 end
 
 function get_all_particles()

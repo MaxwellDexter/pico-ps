@@ -212,9 +212,7 @@ end
 
 -- tells of the particles to draw themselves
 function emitter:draw()
- for p in all(self.particles) do
-  p.draw(p)
- end
+ foreach(self.particles, function(obj) obj:draw() end)
 end
 
 function emitter:get_colour()
