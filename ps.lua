@@ -44,50 +44,52 @@ end
 -------------------------------------------------- particle
 particle = {}
 particle.__index = particle
-function particle.create(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
+function particle.create()
  local p = {}
  setmetatable (p, particle)
+ return p
+end
 
- p.pos = point2d.create(x,y)
- p.life_initial = life
- p.life = life
+function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
+ self.pos = point2d.create(x,y)
+ self.life_initial = life
+ self.life = life
 
  -- the 1125 number was 180 in the original calculation, 
  -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
  -- don't ask me why it's 1131, i don't know. maybe it's odd because i rounded pi?
  local angle_radians = angle * 3.14159 / 1131
- p.velocity = point2d.create(speed_initial*cos(angle_radians), speed_initial*sin(angle_radians))
- p.vel_initial = point2d.create(p.velocity.x, p.velocity.y)
- p.vel_final = point2d.create(speed_final*cos(angle_radians), speed_final*sin(angle_radians))
+ self.velocity = point2d.create(speed_initial*cos(angle_radians), speed_initial*sin(angle_radians))
+ self.vel_initial = point2d.create(self.velocity.x, self.velocity.y)
+ self.vel_final = point2d.create(speed_final*cos(angle_radians), speed_final*sin(angle_radians))
 
- p.dead = false
- p.gravity = gravity
+ self.dead = false
+ self.gravity = gravity
 
- p.size = size_initial
- p.size_initial = size_initial
- p.size_final = size_final
+ self.size = size_initial
+ self.size_initial = size_initial
+ self.size_final = size_final
 
- p.sprites = sprites
- if (p.sprites ~= nil) then
-  p.sprite_time = (1 / #p.sprites) * p.life_initial
-  p.current_sprite_time = p.sprite_time
-  p.sprites_index = 1
-  p.sprite = p.sprites[p.sprites_index]
+ self.sprites = sprites
+ if (self.sprites ~= nil) then
+  self.sprite_time = (1 / #self.sprites) * self.life_initial
+  self.current_sprite_time = self.sprite_time
+  self.sprites_index = 1
+  self.sprite = self.sprites[self.sprites_index]
  else
-  p.sprite = nil
+  self.sprite = nil
  end
 
- p.colours = colours
+ self.colours = colours
  if (colours ~= nil) then
-  p.colour_time = (1 / #p.colours) * p.life_initial
-  p.current_colour_time = p.colour_time
-  p.colours_index = 1
-  p.colour = p.colours[p.colours_index]
+  self.colour_time = (1 / #self.colours) * self.life_initial
+  self.current_colour_time = self.colour_time
+  self.colours_index = 1
+  self.colour = self.colours[self.colours_index]
+  if (self.colour == nil) then stop() end -- TODO: somehow the colour ends up being nil
  else
-  p.colour = nil
+  self.colour = nil
  end
-
- return p
 end
 
 -- update: handles all of the values changing like life, gravity, size/life, vel/life, movement and dying
@@ -146,8 +148,6 @@ function particle:draw()
   spr(self.sprite, self.pos.x, self.pos.y)
  elseif (self.colour ~= nil) then
   circfill(self.pos.x, self.pos.y, self.size, self.colour)
- else
-  error("The particle had no graphics! Please supply sprites or colours!")
  end
 end
 
@@ -169,10 +169,15 @@ function emitter.create(x,y, frequency, max_p, burst, gravity)
  p.pos = point2d.create(x,y)
  p.emitting = true
  p.frequency = frequency
- p.emit_time = frequency
+ p.emit_time = 0
  p.max_p = max_p
  p.gravity = gravity or false
  p.burst = burst or false
+ p.burst_amount = p.max_p
+ p.use_pooling = true
+ if (p.max_p < 1) then
+  p.use_pooling = false end
+ p.pool = {}
  p.rnd_colour = false
  p.rnd_sprite = false
  p.use_area = false
@@ -246,9 +251,16 @@ function emitter:get_new_particle()
   y += flr(rnd(height)) - (height / 2)
  end
 
- --(x,y, gravity, colour, sprite, life, angle, speed_initial, speed_final, size_initial, size_final)
- local p = particle.create
- (
+ local p = {}
+ if (self.use_pooling and #self.particles + #self.pool == self.max_p) then
+  p = self.pool[1]
+  del(self.pool, p)
+ else
+  p = particle.create()
+ end
+
+ -- (x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
+ p.set_values (p, -- self
   x, y, -- pos
   self.gravity, -- gravity
   self.get_colour(self), sprites, -- graphics
@@ -262,29 +274,35 @@ end
 
 function emitter:emit(dt)
  if (self.emitting) then
-  if (self.burst) then -- burst!
+  -- burst!
+  if (self.burst) then
    if (self.max_p <= 0) then
-    self.max_p = 50 end
-   for i=1,self.max_p do
+    self.max_p = 50
+   end
+   for i=1, self.get_amount_to_spawn(self, self.burst_amount) do
     self.add_particle(self, self.get_new_particle(self))
    end
    self.emitting = false
-  else -- we're continuously emitting
-   if (self.frequency >= 1) then
-    if (self.max_p == 0 or #self.particles + self.frequency <= self.max_p) then
-     for i=1, self.frequency do
-      self.add_particle(self, self.get_new_particle(self))
-     end
-    end
-   else
-    self.emit_time += self.frequency
-    if (self.emit_time >= 1 and (self.max_p == 0 or #self.particles <= self.max_p)) then
+
+  -- we're continuously emitting
+  else
+   self.emit_time += self.frequency
+   if (self.emit_time >= 1) then
+    local amount = self.get_amount_to_spawn(self, self.emit_time)
+    for i=1, amount do
      self.add_particle(self, self.get_new_particle(self))
-     self.emit_time -= 1
     end
+    self.emit_time -= amount
    end
   end
  end
+end
+
+function emitter:get_amount_to_spawn(spawn_amount)
+ if (self.max_p ~= 0 and #self.particles + flr(spawn_amount) >= self.max_p) then
+  return self.max_p - #self.particles
+ end
+ return flr(spawn_amount)
 end
 
 function emitter:add_particle(p)
@@ -303,6 +321,9 @@ end
 
 function emitter:remove_dead()
  for p in all(self.to_remove) do
+  if (self.use_pooling) then
+   add(self.pool, p)
+  end
   del(self.particles, p)
  end
  self.to_remove = {}
@@ -326,7 +347,9 @@ function emitter:is_emitting()
 end
 
 function emitter:clone()
- local new = emitter.create(self.pos.x, self.pos.y, self.frequency, self.max_p, self.burst, self.gravity)
+ local new = emitter.create(self.pos.x, self.pos.y, self.frequency, self.max_p)
+ ps_set_burst(new, self.burst, self.burst_amount)
+ ps_set_gravity(new, self.gravity)
  ps_set_rnd_colour(new, self.rnd_colour)
  ps_set_rnd_sprite(new, self.rnd_sprite)
  ps_set_area(new, self.area_width, self.area_height)
@@ -336,6 +359,7 @@ function emitter:clone()
  ps_set_angle(new, self.p_angle, self.p_angle_spread)
  ps_set_speed(new, self.p_speed_initial, self.p_speed_final, self.p_speed_spread_initial, self.p_speed_spread_final)
  ps_set_size(new, self.p_size_initial, self.p_size_final, self.p_size_spread_initial, self.p_size_spread_final)
+ ps_set_pooling(new, self.use_pooling)
  return new
 end
 
@@ -357,8 +381,17 @@ function ps_set_gravity(e, gravity)
  e.gravity = gravity
 end
 
-function ps_set_burst(e, burst)
+function ps_set_burst(e, burst, burst_amount)
  e.burst = burst
+ e.burst_amount = burst_amount or e.max_p
+end
+
+function ps_set_pooling(e, pooling)
+ e.use_pooling = pooling
+ e.pool = {}
+ if (e.use_pooling and e.max_p < 1) then
+  e.max_p = 20
+ end
 end
 
 function ps_set_rnd_colour(e, rnd_colour)

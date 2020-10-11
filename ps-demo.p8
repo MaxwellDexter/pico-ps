@@ -11,7 +11,7 @@ __lua__
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"space warp", "water spout", "rain", "whirly bird", "spiral galaxy monster", "stars", "explosion", "confetti", "portal", "structures (move it around)", "amoebas"}
+emitters = {"space warp", "water spout", "rain", "whirly bird", "spiral galaxy monster", "stars", "explosion", "confetti", "portal", "structures (mouse)", "structures (arrows)", "amoebas"}
 
 global_angle = 0
 
@@ -25,15 +25,14 @@ function draw_demo()
  print(emitters[emitter_type], 1, 1, 7)
  if (show_demo_info) then
   rectfill(0, 91, 128, 128, 5)
-  if (emitters[emitter_type] ~= "angle spread") then
-   print("use arrow keys to move emitters", 1, 92, 7)
-  else print("arrow keys changes angle/spread", 1, 92, 7) end
-  print("press z to start/stop emitters", 1, 98, 7)
-  print("press x to spawn emitter", 1, 104, 7)
-  print("press s/f to cycle examples", 1, 110, 7)
-  print("press q to show/hide info", 1, 116, 7)
+  print("arrow keys to move emitters", 1, 92, 7)
+  print("z to start/stop emitters", 1, 98, 7)
+  print("x to spawn emitter", 1, 104, 7)
+  print("s/f to cycle examples", 1, 110, 7)
+  print("q to show/hide info", 1, 116, 7)
   print("particles: "..get_all_particles(), 1, 122, 7)
-  print("cpu: "..stat(1), 80, 122, 7)
+  print("mem: "..stat(0), 84, 116, 15)
+  print("cpu: "..stat(1), 84, 122, 15)
  end
  foreach(my_emitters, function(obj) obj:draw() end)
 end
@@ -53,6 +52,7 @@ function update_demo()
   update_hypno(e)
   update_warp(e)
   update_portal(e)
+  update_structures(e)
  end
  get_input()
 end
@@ -91,6 +91,12 @@ function update_whirly_bird(e)
    local p = rotate_janky(64, 64, 0.01, e.pos)
    ps_set_pos(e, p.x, p.y)
   end
+end
+
+function update_structures(e)
+ if (emitters[emitter_type] == "structures (mouse)") then
+  ps_set_pos(e, stat(32), stat(33))
+ end
 end
 
 function rotate_janky(ox, oy, angle, p)
@@ -145,15 +151,8 @@ function get_input()
   y = 1
  end
  for e in all(my_emitters) do
-  if (emitters[emitter_type] ~= "angle spread") then
-   e.pos.x = e.pos.x + x
-   e.pos.y = e.pos.y + y
-  else
-   e.p_angle = e.p_angle + -x
-   if (e.p_angle_spread > 0) then
-    e.p_angle_spread = e.p_angle_spread + y
-   else e.p_angle_spread = 1 end
-  end
+  e.pos.x = e.pos.x + x
+  e.pos.y = e.pos.y + y
  end
 
  if (btnp(0,1)) then
@@ -177,7 +176,7 @@ function spawn_emitter(emitter_string)
  -- here is an example of using the set functions to create an emitter
  if (emitter_string == "space warp") then
   -- create the emitter using x,  y,  frequency, max_p
-  local warp = emitter.create(70, 70, 11, 0)
+  local warp = emitter.create(70, 70, 11, 520)
   -- the emitter.create() function has optional arguments
   -- set the stuff you want to change
   ps_set_speed(warp, 30, 200)
@@ -185,6 +184,7 @@ function spawn_emitter(emitter_string)
   ps_set_size(warp, 0, 2, 0.5, 0)
   ps_set_colours(warp, {7, 8, 11, 12, 14})
   ps_set_rnd_colour(warp, true)
+  ps_set_pooling(warp, true)
   add(my_emitters, warp)
  elseif (emitter_string == "rain") then
   local rain = emitter.create(64, 7, 2, 0)
@@ -247,34 +247,62 @@ function spawn_emitter(emitter_string)
   ps_set_angle(explo, 90, 45)
   add(my_emitters, explo)
  elseif(emitter_string == "stars") then
-  local stars = emitter.create(0, 64, 0.2, 0)
-  ps_set_area(stars, 0, 128)
-  ps_set_colours(stars, {7, 6, 5, 1})
-  ps_set_rnd_colour(stars, true)
-  ps_set_size(stars, 0, 0, 2)
-  ps_set_speed(stars, 10, 10, 30)
-  ps_set_life(stars, 4, 4)
-  ps_set_angle(stars, 0, 0)
-  add(my_emitters, stars)
+  local front = emitter.create(0, 64, 0.2, 0)
+  ps_set_area(front, 0, 128)
+  ps_set_colours(front, {7})
+  ps_set_size(front, 0)
+  ps_set_speed(front, 40, 40, 10)
+  ps_set_life(front, 3)
+  ps_set_angle(front, 0, 0)
+  add(my_emitters, front)
+  local midfront = front.clone(front)
+  ps_set_frequency(midfront, 0.15)
+  ps_set_life(midfront, 3.5)
+  ps_set_colours(midfront, {6})
+  ps_set_speed(midfront, 30, 30, 10)
+  add(my_emitters, midfront)
+  local midback = front.clone(front)
+  ps_set_life(midback, 5, 0)
+  ps_set_colours(midback, {5})
+  ps_set_speed(midback, 20, 20, 10)
+  ps_set_frequency(midback, 0.1)
+  add(my_emitters, midback)
+  local back = front.clone(front)
+  ps_set_frequency(back, 0.07)
+  ps_set_life(back, 8)
+  ps_set_colours(back, {1})
+  ps_set_speed(back, 10, 10, 10)
+  add(my_emitters, back)
+  local special = emitter.create(64, 64, 0.2, 0)
+  ps_set_area(special, 128, 128)
+  ps_set_angle(special, 0, 0)
+  ps_set_frequency(special, 0.01)
+  ps_set_sprites(special, {78, 79, 80, 81, 82, 83, 84})
+  ps_set_speed(special, 30, 30, 15)
+  ps_set_life(special, 1)
+  add(my_emitters, special)
  elseif(emitter_string == "explosion") then
-  local explo = emitter.create(64, 64, 0, 10, true)
+  local explo = emitter.create(64, 64, 0, 30)
   ps_set_size(explo, 4, 0, 3, 0)
   ps_set_speed(explo, 0)
   ps_set_life(explo, 1)
   ps_set_colours(explo, {7, 6, 5})
   ps_set_area(explo, 30, 30)
+  ps_set_burst(explo, true, 10)
   add(my_emitters, explo)
-  local spray = emitter.create(64, 64, 0, 40, true)
+  local spray = emitter.create(64, 64, 0, 80)
   ps_set_size(spray, 0)
   ps_set_speed(spray, 20, 10, 20, 10)
   ps_set_colours(spray, {7, 6, 5})
   ps_set_life(spray, 0, 1.3)
+  ps_set_burst(spray, true, 30)
   add(my_emitters, spray)
-  local anim = emitter.create(64, 64, 0, 6, true)
+  local anim = emitter.create(64, 64, 0, 18)
   ps_set_speed(anim, 0)
   ps_set_life(anim, 1)
   ps_set_sprites(anim, {32, 33, 34, 35, 36, 37, 38, 39, 40, 40, 40, 41, 41, 41})
   ps_set_area(anim, 30, 30)
+  ps_set_burst(anim, true, 6)
   add(my_emitters, anim)
  elseif(emitter_string == "confetti") then
   local left = emitter.create(0, 90, 0, 50, true, true)
@@ -322,32 +350,37 @@ function spawn_emitter(emitter_string)
   ps_set_life(center, 1)
   ps_set_speed(center, 35, -20)
   add(my_emitters, center)
- elseif(emitter_string == "structures (move it around)") then
-  local struc = emitter.create(96, 64, 2, 0)
+ elseif(emitter_string == "structures (mouse)") then
+  poke(0x5f2d, 1)
+  local struc = emitter.create(64, 64, 1, 0)
   ps_set_speed(struc, 1, 1)
-  ps_set_sprites(struc, {54, 55, 45})
+  ps_set_sprites(struc, {85, 86, 87, 88, 89, 90})
   ps_set_angle(struc, 180, 0)
-  ps_set_life(struc, 1.5)
+  ps_set_life(struc, 2)
   add(my_emitters, struc)
-  struc = emitter.create(32, 64, 2, 0)
+ elseif(emitter_string == "structures (arrows)") then
+  local struc = emitter.create(96, 64, 1, 125)
   ps_set_speed(struc, 1, 1)
-  ps_set_sprites(struc, {52, 53, 44})
+  ps_set_sprites(struc, {54, 55, 45, 47})
   ps_set_angle(struc, 180, 0)
-  ps_set_life(struc, 1.5)
+  ps_set_life(struc, 2)
   add(my_emitters, struc)
-  struc = emitter.create(64, 32, 2, 0)
-  ps_set_speed(struc, 1, 1)
-  ps_set_sprites(struc, {56, 57, 46})
-  ps_set_angle(struc, 180, 0)
-  ps_set_life(struc, 1.5)
-  add(my_emitters, struc)
+  local structwo = struc.clone(struc)
+  ps_set_pos(structwo, 32, 64)
+  ps_set_sprites(structwo, {52, 53, 44, 30})
+  add(my_emitters, structwo)
+  local structhree = struc.clone(struc)
+  ps_set_pos(structhree, 64, 32)
+  ps_set_sprites(structhree, {56, 57, 46, 31})
+  add(my_emitters, structhree)
  elseif(emitter_string == "amoebas") then
-  local grav = emitter.create(84, 64, 0.5, 0)
+  local grav = emitter.create(84, 64, 0.3, 60)
   ps_set_speed(grav, 50, -50, 50, -50)
   ps_set_life(grav, 1, 1.5)
   ps_set_sprites(grav, {75, 76, 77, 72, 71, 72, 73, 74})
   ps_set_area(grav, 20, 110)
   ps_set_angle(grav, 180)
+  ps_set_pooling(grav, true)
   add(my_emitters, grav)
  end
 end
@@ -381,17 +414,17 @@ __gfx__
 0000000000a99a000020020000b00b0000a00a00009009000080080000e00e000010010000890000000000000000000000000000000000000000000000000000
 0000a000000000000880000008880000008000000880000000888800000000000000000000000000000000000000000000000000000000000000000000000000
 0089a9000080800008980000890000000890000080900000088888800098980000999900000a9000000aa0000000000000000000000000000000000000000000
-0989a980008080800098000008900000890000008900000088888888098989800999999000a9a90000aaaa000007a00000000000000000000000000000000000
+0989a980008080800098000008900000890000008900000088888888098989800999999000a9a90000aaaa000007a000000000000000000000f0000000300000
 0989898080808080098000000080000008000000088900008888888808989890099999900a9a9a900aaaaaa0007a7a0000077000000070000000000000000000
-88898888888080888800000008900000000000000098000088888888098989800999999009a9a9a00aaaaaa000a7a70000077000000000000000000000000000
+88898888888080888800000008900000000000000098000088888888098989800999999009a9a9a00aaaaaa000a7a70000077000000000000000f00000003000
 888888888888808889800000890000000000000009800000888888880898989009999990009a9a0000aaaa00000a700000000000000000000000000000000000
 0888888008888880009800000880000000000000080000000888888000898900009999000009a000000aa0000000000000000000000000000000000000000000
 00888800008888000880000000000000000000000000000000888800000000000000000000000000000000000000000000000000000000000000000000000000
 000000000077770000aaaa00009999000088880000888800006666000000000000000000000000000000000000000000f0000000900000003000000000000000
 00077000077777700a7777a009777790087777800866668006555560006000606000000600000000000000000000000000000000000000000000000000000000
-0077770077777777a777777a97777779876666788665566865000056065606560050005000000000000000000000000000f00000009000000030000000000000
+0077770077777777a777777a97777779876666788665566865000056065606560050005000000000000000000000000000f00000009000000030000000900000
 0777777077777777a777777a977667798765567886500568650000560060006000000000000005000000a0000007000000000000000000000000000000000000
-0777777077777777a777777a97766779876556788650056865000056000006000060000000000000000a00000000a0000000f000000090000000300000000000
+0777777077777777a777777a97766779876556788650056865000056000006000060000000000000000a00000000a0000000f000000090000000300000009000
 0077770077777777a777777a97777779876666788665566865000056060065600000050600500000000000000000000000000000000000000000000000000000
 00077000077777700a7777a0097777900877778008666680065555606560060005000000000000000000000000000000000000f0000000900000003000000000
 000000000077770000aaaa0000999900008888000088880000666600060000000000000000000000000000000000000000000000000000000000000000000000
@@ -405,12 +438,20 @@ __gfx__
 c00000001000000050000000d00000000000000e0000000f0000000a000000090000000b00000003000000000000000000000000000000000000000000000000
 000000000000000007b00b70b7b00b7b73000037b000000b000000000eee000000e0000000000000000000000000000000000000000000000000000000000000
 00000000007bb7007b3333b773000037300000030000000000000000eccce0000ece000000e00000000000000000000000000000000000000000000000000000
-000bb00007b33b70b300003bb000000b000000000000000000000000ecdce000ecdce0000ede000000d00000000000000000000000e000000000000000000000
-00b77b000b3373b00303003000033000000660000006000000060000eccceee00ece0e0000e00000000000000000d000000d00000cdc00000000000000000000
-00b77b000b3733b003003030000330000006600000006000000030000eeeccce00e0ece000000e0000000000000000000000e00000c00e000000000000000000
+000bb00007b33b70b300003bb000000b000000000000000000000000ecdce000ecdce0000ede000000d00000000000000000000000e000000000000000070000
+00b77b000b3373b00303003000033000000660000006000000060000eccceee00ece0e0000e00000000000000000d000000d00000cdc00000007000000707000
+00b77b000b3733b003003030000330000006600000006000000030000eeeccce00e0ece000000e0000000000000000000000e00000c00e000000000000070000
 000bb00007b33b70b300003bb000000b000000000000000000000000000ecdce000ecdce0000ece000000e0000000000000000000000cde00000000000000000
 00000000007bb7007b3333b773000037300000030000000000000000000eccce0000ece000000e0000000000000000000000000000000e000000000000000000
 000000000000000007b00b70b7b00b7b73000037b000000b000000000000eee000000e0000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000007000000070000000600000006000000050000000000000000000000000000000000000000000000000000000
+00000000050005000700070006000600050005000700000006000000060000000500000000000000000000000000000000000000000000000000000000000000
+00707000006060000060600000505000000000000070000000700000006000000060000000500000001000000000000000000000000000000000000000000000
+00060000000700000005000000000000000000000007000000060000000600000005000000000000000000000000000000000000000000000000000000000000
+00707000006060000060600000505000000000000000700000007000000060000000600000005000000010000000000000000000000000000000000000000000
+00000000050005000700070006000600050005000000070000000600000006000000050000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000007000000070000000600000006000000050000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000700000006000000060000000500000000000000000000000000000000000000000000000000000000
 __label__
 55555555555555555555555555555555e55555555555555555555555555588855595555555555555555555555555555555555555555555555555555555555555
 57775757577757775757577757575777577555775555555555555555555558555555555555555555555555555555555555555555555555555555555555555555
