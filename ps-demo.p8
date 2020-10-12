@@ -4,14 +4,14 @@ __lua__
 --pico-ps particle system
 --max kearney
 --created: april 2019
---updated: july 2020
+--updated: october 2020
 ---------------------
 
 -------------------------------------------------- globals
 show_demo_info = true
 my_emitters = nil
 emitter_type = 1
-emitters = {"space warp", "water spout", "rain", "whirly bird", "spiral galaxy monster", "stars", "explosion", "confetti", "portal", "structures (mouse)", "structures (arrows)", "amoebas"}
+emitters = {"fire", "water spout", "rain", "stars", "explosion (burst)", "confetti (burst)", "space warp", "amoebas", "portal", "whirly bird", "spiral galaxy monster", "structures (mouse)", "structures (arrows)"}
 
 global_angle = 0
 
@@ -21,10 +21,12 @@ global_angle = 0
 -- these are functions to help the demo run. you can copy/model from here,
 -- but most of this stuff isn't strictly necessary for an emitter to run
 function draw_demo()
- rectfill(0, 0, 128, 6, 5)
- print(emitters[emitter_type], 1, 1, 7)
+ foreach(my_emitters, function(obj) obj:draw() end)
  if (show_demo_info) then
-  rectfill(0, 91, 128, 128, 5)
+  rectfill(0, 0, 128, 6, 1)
+  line(0, 7, 128, 7, 2)
+  rectfill(0, 91, 128, 128, 1)
+  line(0, 90, 128, 90, 2)
   print("arrow keys to move emitters", 1, 92, 7)
   print("z to start/stop emitters", 1, 98, 7)
   print("x to spawn emitter", 1, 104, 7)
@@ -34,7 +36,8 @@ function draw_demo()
   print("mem: "..stat(0), 84, 116, 15)
   print("cpu: "..stat(1), 84, 122, 15)
  end
- foreach(my_emitters, function(obj) obj:draw() end)
+ print(emitters[emitter_type], 1, 1, 7)
+ print("pico-ps", 100, 1, 15)
 end
 
 function get_all_particles()
@@ -53,6 +56,7 @@ function update_demo()
   update_warp(e)
   update_portal(e)
   update_structures(e)
+  update_fire(e)
  end
  get_input()
 end
@@ -96,6 +100,12 @@ end
 function update_structures(e)
  if (emitters[emitter_type] == "structures (mouse)") then
   ps_set_pos(e, stat(32), stat(33))
+ end
+end
+
+function update_fire(e)
+ if (emitters[emitter_type] == "fire") then
+  ps_set_angle(e, 90 + (sin(t() * e.flicker) * 27), e.p_angle_spread)
  end
 end
 
@@ -187,14 +197,13 @@ function spawn_emitter(emitter_string)
   ps_set_pooling(warp, true)
   add(my_emitters, warp)
  elseif (emitter_string == "rain") then
-  local rain = emitter.create(64, 7, 2, 0)
-  ps_set_area(rain, 128, 0)
+  local rain = emitter.create(64, 12, 2, 200)
+  ps_set_area(rain, 50, 10)
   ps_set_gravity(rain, true)
   ps_set_speed(rain, 0)
   ps_set_size(rain, 0)
-  ps_set_life(rain, 2, 1)
-  ps_set_colours(rain, {1, 12, 6})
-  ps_set_rnd_colour(rain, true)
+  ps_set_life(rain, 1.5, 1)
+  ps_set_sprites(rain, {91, 92, 93, 94, 95, 96, 97})
   add(my_emitters, rain)
  elseif(emitter_string == "whirly bird") then
   local bird = emitter.create(80, 80, 1, 0)
@@ -251,27 +260,27 @@ function spawn_emitter(emitter_string)
   ps_set_area(front, 0, 128)
   ps_set_colours(front, {7})
   ps_set_size(front, 0)
-  ps_set_speed(front, 40, 40, 10)
-  ps_set_life(front, 3)
+  ps_set_speed(front, 34, 34, 10)
+  ps_set_life(front, 3.5)
   ps_set_angle(front, 0, 0)
   add(my_emitters, front)
   local midfront = front.clone(front)
   ps_set_frequency(midfront, 0.15)
-  ps_set_life(midfront, 3.5)
+  ps_set_life(midfront, 4.5)
   ps_set_colours(midfront, {6})
-  ps_set_speed(midfront, 30, 30, 10)
+  ps_set_speed(midfront, 26, 26, 5)
   add(my_emitters, midfront)
   local midback = front.clone(front)
-  ps_set_life(midback, 5, 0)
+  ps_set_life(midback, 6.8)
   ps_set_colours(midback, {5})
-  ps_set_speed(midback, 20, 20, 10)
+  ps_set_speed(midback, 18, 18, 5)
   ps_set_frequency(midback, 0.1)
   add(my_emitters, midback)
   local back = front.clone(front)
   ps_set_frequency(back, 0.07)
-  ps_set_life(back, 8)
+  ps_set_life(back, 11)
   ps_set_colours(back, {1})
-  ps_set_speed(back, 10, 10, 10)
+  ps_set_speed(back, 10, 10, 5)
   add(my_emitters, back)
   local special = emitter.create(64, 64, 0.2, 0)
   ps_set_area(special, 128, 128)
@@ -281,7 +290,7 @@ function spawn_emitter(emitter_string)
   ps_set_speed(special, 30, 30, 15)
   ps_set_life(special, 1)
   add(my_emitters, special)
- elseif(emitter_string == "explosion") then
+ elseif(emitter_string == "explosion (burst)") then
   local explo = emitter.create(64, 64, 0, 30)
   ps_set_size(explo, 4, 0, 3, 0)
   ps_set_speed(explo, 0)
@@ -304,7 +313,7 @@ function spawn_emitter(emitter_string)
   ps_set_area(anim, 30, 30)
   ps_set_burst(anim, true, 6)
   add(my_emitters, anim)
- elseif(emitter_string == "confetti") then
+ elseif(emitter_string == "confetti (burst)") then
   local left = emitter.create(0, 90, 0, 50, true, true)
   ps_set_size(left, 0, 0, 2)
   ps_set_speed(left, 50, 50, 50)
@@ -353,14 +362,14 @@ function spawn_emitter(emitter_string)
  elseif(emitter_string == "structures (mouse)") then
   poke(0x5f2d, 1)
   local struc = emitter.create(64, 64, 1, 0)
-  ps_set_speed(struc, 1, 1)
+  ps_set_speed(struc, 0)
   ps_set_sprites(struc, {85, 86, 87, 88, 89, 90})
   ps_set_angle(struc, 180, 0)
-  ps_set_life(struc, 2)
+  ps_set_life(struc, 5)
   add(my_emitters, struc)
  elseif(emitter_string == "structures (arrows)") then
   local struc = emitter.create(96, 64, 1, 125)
-  ps_set_speed(struc, 1, 1)
+  ps_set_speed(struc, 0)
   ps_set_sprites(struc, {54, 55, 45, 47})
   ps_set_angle(struc, 180, 0)
   ps_set_life(struc, 2)
@@ -382,6 +391,24 @@ function spawn_emitter(emitter_string)
   ps_set_angle(grav, 180)
   ps_set_pooling(grav, true)
   add(my_emitters, grav)
+ elseif(emitter_string == "fire") then
+  local main = emitter.create(64, 64, 4, 110)
+  ps_set_area(main, 5, 0)
+  ps_set_colours(main, {8, 9, 10, 5})
+  ps_set_speed(main, 15, 5, 20)
+  ps_set_life(main, 0.5, 1)
+  ps_set_angle(main, 90, 10)
+  ps_set_size(main, 1.5, 0, 2, 0)
+  main.flicker = 1.1
+  add(my_emitters, main)
+  local left = main.clone(main)
+  ps_set_pos(left, 44, 60)
+  left.flicker = 0.8
+  add(my_emitters, left)
+  local right = main.clone(main)
+  ps_set_pos(right, 84, 60)
+  right.flicker = 0.95
+  add(my_emitters, right)
  end
 end
 
@@ -446,12 +473,18 @@ c00000001000000050000000d00000000000000e0000000f0000000a000000090000000b00000003
 000000000000000007b00b70b7b00b7b73000037b000000b000000000000eee000000e0000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000007000000070000000600000006000000050000000000000000000000000000000000000000000000000000000
 00000000050005000700070006000600050005000700000006000000060000000500000000000000000000000000000000000000000000000000000000000000
-00707000006060000060600000505000000000000070000000700000006000000060000000500000001000000000000000000000000000000000000000000000
-00060000000700000005000000000000000000000007000000060000000600000005000000000000000000000000000000000000000000000000000000000000
-00707000006060000060600000505000000000000000700000007000000060000000600000005000000010000000000000000000000000000000000000000000
+007070000060600000606000005050000000000000700000007000000060000000600000005000000010000000000000000000000000000000000000000c0000
+0006000000070000000500000000000000000000000700000006000000060000000500000000000000000000000100000001000000010000000c0000000c0000
+00707000006060000060600000505000000000000000700000007000000060000000600000005000000010000000000000010000000c0000000c000000070000
 00000000050005000700070006000600050005000000070000000600000006000000050000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000007000000070000000600000006000000050000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000700000006000000060000000500000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000c0000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000c0000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00070000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00070000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 55555555555555555555555555555555e55555555555555555555555555588855595555555555555555555555555555555555555555555555555555555555555
 57775757577757775757577757575777577555775555555555555555555558555555555555555555555555555555555555555555555555555555555555555555

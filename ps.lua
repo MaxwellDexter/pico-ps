@@ -3,7 +3,7 @@
 --    particle system    --
 --  author: max kearney  --
 --  created: april 2019  --
---  updated: july 2020   --
+--  updated: october 2020   --
 ---------------------------
 
 --[[
