@@ -9,6 +9,7 @@ __lua__
 
 -------------------------------------------------- globals
 show_demo_info = true
+show_dude = false
 my_emitters = nil
 emitter_type = 1
 emitters = {"fire", "water spout", "rain", "stars", "explosion (burst)", "confetti (burst)", "space warp", "amoebas", "portal", "whirly bird", "spiral galaxy monster", "structures (mouse)", "structures (arrows)"}
@@ -27,14 +28,20 @@ function draw_demo()
   line(0, 7, 128, 7, 2)
   rectfill(0, 91, 128, 128, 1)
   line(0, 90, 128, 90, 2)
-  print("arrow keys to move emitters", 1, 92, 7)
-  print("z to start/stop emitters", 1, 98, 7)
-  print("x to spawn emitter", 1, 104, 7)
-  print("s/f to cycle examples", 1, 110, 7)
-  print("q to show/hide info", 1, 116, 7)
-  print("particles: "..get_all_particles(), 1, 122, 7)
+  print("arrows: move emitters", 1, 92, 6)
+  print("z: start/stop emitters", 1, 98, 6)
+  print("q: show/hide info", 1, 104, 6)
+  print("f: next example", 1, 110, 6)
+  print("s: prev example", 1, 116, 6)
+  print("x: spawn emitter", 1, 122, 6)
+  print("num: "..get_all_particles(), 84, 110, 15)
   print("mem: "..stat(0), 84, 116, 15)
   print("cpu: "..stat(1), 84, 122, 15)
+  if (show_dude) then
+   print("😐♥", 113, 92, 14)
+  end
+ else
+  print("by max kearney", 72, 122, 5)
  end
  print(emitters[emitter_type], 1, 1, 7)
  print("pico-ps", 100, 1, 15)
@@ -163,6 +170,10 @@ function get_input()
  for e in all(my_emitters) do
   e.pos.x = e.pos.x + x
   e.pos.y = e.pos.y + y
+ end
+
+ if (btnp(4,1)) then
+  show_dude = not show_dude
  end
 
  if (btnp(0,1)) then
