@@ -1,6 +1,6 @@
 # *pico-ps*: a PICO-8 Particle System
 
-This particle system is a lightweight and fast implementation for the fantasy console [PICO-8](https://www.lexaloffle.com/pico-8.php).
+This particle system is a fast and extensive implementation for the fantasy console [PICO-8](https://www.lexaloffle.com/pico-8.php). It is not "lightweight", weighing in at just over 1500 tokens.
 Play the web demo here: https://www.lexaloffle.com/bbs/?tid=33987
 
 # Features
@@ -32,16 +32,44 @@ I'd like to get these features implemented next:
 - ~~Rework backend to use entity-component system~~ not happening soz
 
 # How To Use
-I'd recommend downloading the project and running the `ps-demo.p8` demo to get a feel for the features that the system has. The code can be helpful on how to implement the system into your game, but you can get started quickly by viewing how the `ps-tiny-demo.p8` spawns a particle emitter.
+I'd recommend downloading the project and running the `ps-demo.p8` demo to get a feel for the features that the system has. The code can be helpful on how to implement the system into your game, but you can get started quickly by viewing how the `ps-tiny-demo.p8` spawns a particle emitter. Generally speaking, the emitter creates particle objects and updates and draws them. I recommend looking over the code in `ps.lua`, but you may want to copy the code and view in a text editor of your choice, as it gets kinda horizontal.
 
-Please look through the code in `ps.lua`, as there are some good comments on what everything does. Copy the code and view in a text editor of your choice, as it gets kinda horizontal.
+To use the particle system in your game, please download `ps.lua` to your cart's folder and put `#include ps.lua` at the top of your game's code. This will include the contents of the code in your code, and you can create emitters wherever you like. Emitters are created through the function in the table like
+```
+local e = emitter.create(64, 64, 1, 50)
+```
+You can set the rest of the parameters through the `ps_set_x` series of functions (detailed below). e.g. 
+```
+ps_set_speed(e, speed_initial, speed_final, speed_spread)
+```
+with `speed_final` and `speed_spread` being optional.
+There is also a `clone()` function if you want to make a few emitters that are similar.
 
-To use this, please download `ps.lua` and put `#include ps.lua` at the top of your game code. This will include the contents of the code in your code, and you can create emitters wherever you like. Be sure to update and draw the emitters you have, and run the `update_time()` function before updating the emitters (it depends on the udpated time!). Emitters are created through the function in the table like `emitter.create(...)` where `...` are the base arguments required for an emitter. You can set the rest of the parameters through the `ps_set_x` series of functions (detailed below). e.g. `ps_set_speed(e, speed_initial, speed_final, speed_spread)` with `speed_final` and `speed_spread` being optional. There is also a `clone()` function if you want to make a few emitters that are similar.
-
-Here is the high level UML:
-![High Level UML for the emitter and particle.](https://github.com/MaxwellDexter/pico-ps/blob/master/readme_images/high-level-uml.png)
-
-The emitter has a list of particles that it tells to update and draw. There are a few more moving parts in here but that's the gist of it. 
+## Updating and Drawing
+For updating the emitters, they need the time function updated. You can then call `update()` on each of your emitters you have active.
+```
+update_time()
+self.ps.update(self.ps, delta_time)
+```
+or if you have more than one emitter:
+```
+update_time()
+for e in all(self.emitters) do
+ e.update(e, delta_time) end
+```
+and for drawing you can just call `draw()`:
+```
+self.ps.draw(self.ps)
+```
+or for multiple:
+```
+for e in all(self.emitters) do
+ e.draw(e) end
+```
+Please also be sure to initialise the `prev_time` global in your `_init()` function too:
+```
+prev_time = time()
+```
 
 ## Documentation
 ### Emitters
