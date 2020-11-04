@@ -22,23 +22,14 @@ function update_time()
  prev_time = time()
 end
 
-gravity = 50
+ps_gravity = 50
 
-function calc_gravity(a)
- a.velocity.y = a.velocity.y + delta_time * gravity
+function calc_ps_gravity(a)
+ a.velocity.y = a.velocity.y + delta_time * ps_gravity
 end
 
--------------------------------------------------- point2d
--- this is a container class for two points (a vector). 
--- can be used for coordinates, velocity or anything else that requires 2 parts of data.
-point2d = {}
-point2d.__index = point2d
-function point2d.create(x,y)
- local p = {}
- setmetatable (p, point2d)
- p.x = x
- p.y = y
- return p
+function vec(x,y)
+ return {x = x, y = y}
 end
 
 -------------------------------------------------- particle
@@ -51,24 +42,18 @@ function particle.create()
 end
 
 function particle:set_values(x, y, gravity, colours, sprites, life, angle, speed_initial, speed_final, size_initial, size_final)
- self.pos = point2d.create(x,y)
- self.life_initial = life
- self.life = life
+ self.pos = vec(x,y)
+ self.life_initial, self.life, self.dead, self.gravity = life, life, false, gravity
 
  -- the 1125 number was 180 in the original calculation, 
  -- but i set it to 1131 to make the angle pased in equal to 360 on a full revolution
  -- don't ask me why it's 1131, i don't know. maybe it's odd because i rounded pi?
  local angle_radians = angle * 3.14159 / 1131
- self.velocity = point2d.create(speed_initial*cos(angle_radians), speed_initial*sin(angle_radians))
- self.vel_initial = point2d.create(self.velocity.x, self.velocity.y)
- self.vel_final = point2d.create(speed_final*cos(angle_radians), speed_final*sin(angle_radians))
+ self.velocity = vec(speed_initial*cos(angle_radians), speed_initial*sin(angle_radians))
+ self.vel_initial = vec(self.velocity.x, self.velocity.y)
+ self.vel_final = vec(speed_final*cos(angle_radians), speed_final*sin(angle_radians))
 
- self.dead = false
- self.gravity = gravity
-
- self.size = size_initial
- self.size_initial = size_initial
- self.size_final = size_final
+ self.size, self.size_initial, self.size_final = size_initial, size_initial, size_final
 
  self.sprites = sprites
  if (self.sprites ~= nil) then
@@ -97,7 +82,7 @@ function particle:update(dt)
  self.life -= dt
 
  if (self.gravity) then
-  calc_gravity(self)
+  calc_ps_gravity(self)
  end
 
  -- size over lifetime
@@ -160,45 +145,46 @@ end
 emitter = {}
 emitter.__index = emitter
 function emitter.create(x,y, frequency, max_p, burst, gravity)
- local p = {}
+ local p = {
+  particles = {},
+  to_remove = {},
+
+  -- emitter variables
+  pos = vec(x,y),
+  emitting = true,
+  frequency = frequency,
+  emit_time = 0,
+  max_p = max_p,
+  gravity = gravity or false,
+  burst = burst or false,
+  burst_amount = max_p,
+  use_pooling = true,
+  pool = {},
+  rnd_colour = false,
+  rnd_sprite = false,
+  use_area = false,
+  area_width = 0,
+  area_height = 0,
+
+  -- particle factory stuff
+  p_colours = {1},
+  p_sprites = nil,
+  p_life = 1,
+  p_life_spread = 0,
+  p_angle = 0,
+  p_angle_spread = 360,
+  p_speed_initial = 10,
+  p_speed_final = 10,
+  p_speed_spread_initial = 0,
+  p_speed_spread_final = 0,
+  p_size_initial = 1,
+  p_size_final = 1,
+  p_size_spread_initial = 0,
+  p_size_spread_final = 0
+ }
  setmetatable (p, emitter)
- p.particles = {}
- p.to_remove = {}
-
- -- emitter variables
- p.pos = point2d.create(x,y)
- p.emitting = true
- p.frequency = frequency
- p.emit_time = 0
- p.max_p = max_p
- p.gravity = gravity or false
- p.burst = burst or false
- p.burst_amount = p.max_p
- p.use_pooling = true
  if (p.max_p < 1) then
-  p.use_pooling = false end
- p.pool = {}
- p.rnd_colour = false
- p.rnd_sprite = false
- p.use_area = false
- p.area_width = 0
- p.area_height = 0
-
- -- particle factory stuff
- p.p_colours = {1}
- p.p_sprites = nil
- p.p_life = 1
- p.p_life_spread = 0
- p.p_angle = 0
- p.p_angle_spread = 360
- p.p_speed_initial = 10
- p.p_speed_final = 10
- p.p_speed_spread_initial = 0
- p.p_speed_spread_final = 0
- p.p_size_initial = 1
- p.p_size_final = 1
- p.p_size_spread_initial = 0
- p.p_size_spread_final = 0
+   p.use_pooling = false end
 
  return p
 end
@@ -366,7 +352,7 @@ end
 -- setter functions
 
 function ps_set_pos(e, x, y)
- e.pos = point2d.create(x,y)
+ e.pos = vec(x,y)
 end
 
 function ps_set_frequency(e, frequency)
